@@ -13,6 +13,7 @@ struct State {
     queue: wgpu::Queue,
     config: wgpu::SurfaceConfiguration,
     size: winit::dpi::PhysicalSize<u32>,
+    r: f64, g: f64, b: f64
 }
 
 impl State {
@@ -21,15 +22,6 @@ impl State {
 
         let instance  = wgpu::Instance::new(wgpu::Backends::all());
         let surface = unsafe {instance.create_surface(window)};
-        instance.enumerate_adapters(wgpu::Backends::all())
-        .for_each(|adapter| {
-            if surface.get_supported_formats(&adapter).len() > 0 {
-                println!("supported adapter: {:?}", &adapter);
-            }
-            else {
-                println!("UNsupported adapter: {:?}", &adapter);
-            }
-        });
         let adapter = instance.request_adapter(
             &wgpu::RequestAdapterOptions {
                 power_preference: wgpu::PowerPreference::default(),
@@ -64,12 +56,12 @@ impl State {
             device,
             queue,
             config,
-            size
+            size,
+            r: 0.0, g: 0.1, b: 0.1
         }
     }
 
     fn resize(&mut self, new_size: winit::dpi::PhysicalSize<u32>){
-        println!("resizing");
         if new_size.width > 0 && new_size.height > 0 {
             self.size = new_size;
             self.config.width = new_size.width;
@@ -78,7 +70,14 @@ impl State {
         }
     }
 
-    fn input(&mut self, _event: &WindowEvent) -> bool{
+    fn input(&mut self, event: &WindowEvent) -> bool{
+        match event {
+            WindowEvent::CursorMoved { position, .. } => {
+                self.r = position.y / (self.config.height as f64);
+                self.g = position.x / (self.config.width as f64);
+            }
+            _ => {}
+        }
         false
     }
 
@@ -100,9 +99,9 @@ impl State {
                     resolve_target: None,
                     ops: wgpu::Operations {
                         load: wgpu::LoadOp::Clear(wgpu::Color {
-                            r: 0.1,
-                            g: 0.2,
-                            b: 0.3,
+                            r: self.r,
+                            g: self.g,
+                            b: self.b,
                             a: 1.0,
                         }),
                         store: true,
@@ -175,6 +174,9 @@ pub async fn run() {
                     WindowEvent::ScaleFactorChanged { new_inner_size, ..} => {
                         state.resize(**new_inner_size);
                     },
+                    WindowEvent::CursorMoved { .. } => {
+                        state.input(event);
+                    }
                     _ => {}
                 }
             }
