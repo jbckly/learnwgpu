@@ -1,0 +1,12 @@
+{
+  "name": "rustp",
+  "version": "0.1.0",
+  "files": [
+    "rustp_bg.wasm",
+    "rustp.js",
+    "rustp.d.ts"
+  ],
+  "module": "rustp.js",
+  "types": "rustp.d.ts",
+  "sideEffects": false
+}
