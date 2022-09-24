@@ -19,6 +19,12 @@ struct State {
     vertex_buffer: wgpu::Buffer,
     index_buffer: wgpu::Buffer,
     num_indices: u32,
+    vertex_buffer2: wgpu::Buffer,
+    index_buffer2: wgpu::Buffer,
+    num_indices2: u32,
+    second_shape: bool,
+    mouse_x: f64,
+    mouse_y: f64,
 }
 
 #[repr(C)]
@@ -49,7 +55,7 @@ impl Vertex {
     }
 }
 
-const VERTICES: &[Vertex] = &[
+const VERTICES2: &[Vertex] = &[
     Vertex { position: [-0.0868241, 0.89240386, 0.0], color: [0.1, 0.0, 0.5] }, // A
     Vertex { position: [-0.89513406, 0.06958647, 0.0], color: [0.5, 0.0, 0.5] }, // B
     Vertex { position: [-0.41918549, -0.84939706, 0.0], color: [0.5, 0.4, 0.5] }, // C
@@ -57,10 +63,37 @@ const VERTICES: &[Vertex] = &[
     Vertex { position: [0.84147372, 0.6347359, 0.0], color: [0.2, 0.2, 0.5] }, // E
 ];
 
-const INDICES: &[u16] = &[
+const INDICES2: &[u16] = &[
     0, 1, 4,
     1, 2, 4,
     2, 3, 4,
+];
+
+const VERTICES: &[Vertex] = &[
+    Vertex { position: [0.42066406, -0.72188802, 0.0], color: [0.1, 0.0, 0.5] },
+    Vertex { position: [0.84009766, -0.37111979, 0.0], color: [0.1, 0.0, 0.5] },
+    Vertex { position: [0.82429687, 0.17361979, 0.0], color: [1.0, 0.0, 0.5] },
+    Vertex { position: [0.22040039, 0.75194010, 0.0], color: [0.1, 0.0, 0.5] },
+    Vertex { position: [0.73281250, 0.67437500, 0.0], color: [0.1, 0.0, 0.5] },
+    Vertex { position: [-0.30139648, 0.88492188, 0.0], color: [0.1, 0.0, 0.5] },
+    Vertex { position: [-0.63413086, 0.51966146, 0.0], color: [0.1, 0.0, 0.5] },
+    Vertex { position: [-0.74897461, 0.08651042, 0.0], color: [0.1, 0.0, 0.5] },
+    Vertex { position: [-0.64583008, -0.62899740, 0.0], color: [0.1, 0.0, 0.5] },
+    Vertex { position: [-0.23716797, -0.80983073, 0.0], color: [0.1, 0.0, 1.0] },
+    Vertex { position: [-0.03735352, 0.01218750, 0.0], color: [0.1, 1.0, 0.5] },
+];
+
+const INDICES: &[u16] = &[
+    0, 1, 10,
+    1, 2, 10,
+    2, 3, 10,
+    3, 4, 10,
+    4, 5, 10,
+    5, 6, 10,
+    6, 7, 10,
+    7, 8, 10,
+    8, 9, 10,
+    9, 0, 10,
 ];
 
 impl State {
@@ -164,6 +197,26 @@ impl State {
         );
 
         let num_indices = INDICES.len() as u32;
+
+        let vertex_buffer2 = device.create_buffer_init(
+            &wgpu::util::BufferInitDescriptor {
+                label: Some("Vertex Buffer"),
+                contents: bytemuck::cast_slice(VERTICES2),
+                usage: wgpu::BufferUsages::VERTEX
+            }
+        );
+
+        let index_buffer2 = device.create_buffer_init(
+            &wgpu::util::BufferInitDescriptor {
+                label: Some("Index Buffer"),
+                contents: bytemuck::cast_slice(INDICES2),
+                usage: wgpu::BufferUsages::INDEX
+            }
+        );
+
+        let num_indices2 = INDICES2.len() as u32;
+
+        let second_shape = false;
         
         Self {
             surface,
@@ -176,6 +229,12 @@ impl State {
             vertex_buffer,
             index_buffer,
             num_indices,
+            vertex_buffer2,
+            index_buffer2,
+            num_indices2,
+            second_shape,
+            mouse_x: 0.0,
+            mouse_y: 0.0,
         }
     }
 
@@ -190,7 +249,13 @@ impl State {
 
     fn input(&mut self, event: &WindowEvent) -> bool{
         match event {
+            WindowEvent::MouseInput { button: MouseButton::Left, state: ElementState::Pressed, .. } => {
+                println!("Vertex {{ position: [{:.8}, {:.8}, 0.0], color: [0.1, 0.0, 0.5] }},", (self.mouse_x/self.config.width as f64 - 0.5) * 2.0, (self.mouse_y/self.config.height as f64 - 0.5) * 2.0);
+                true
+            }
             WindowEvent::CursorMoved { position, .. } => {
+                self.mouse_x = position.x;
+                self.mouse_y = position.y;
                 self.clear_color = wgpu::Color {
                     r: position.y / (self.config.height as f64),
                     g: position.x / (self.config.width as f64),
@@ -199,6 +264,13 @@ impl State {
                 };
                 true
             }
+            WindowEvent::KeyboardInput { input: KeyboardInput {state: ElementState::Pressed, virtual_keycode: Some(VirtualKeyCode::Space), .. }, ..
+            } => {
+                self.second_shape ^= true;
+                println!("second_shape now {}", self.second_shape);
+                true
+            }
+
             _ => false
         }
     }
@@ -227,9 +299,15 @@ impl State {
                 depth_stencil_attachment: None,
             });
             render_pass.set_pipeline(&self.render_pipeline);
-            render_pass.set_vertex_buffer(0, self.vertex_buffer.slice(..));
-            render_pass.set_index_buffer(self.index_buffer.slice(..), wgpu::IndexFormat::Uint16);
-            render_pass.draw_indexed(0..self.num_indices, 0, 0..1);
+            if !self.second_shape {
+                render_pass.set_vertex_buffer(0, self.vertex_buffer.slice(..));
+                render_pass.set_index_buffer(self.index_buffer.slice(..), wgpu::IndexFormat::Uint16);
+                render_pass.draw_indexed(0..self.num_indices, 0, 0..1);
+            } else {
+                render_pass.set_vertex_buffer(0, self.vertex_buffer2.slice(..));
+                render_pass.set_index_buffer(self.index_buffer2.slice(..), wgpu::IndexFormat::Uint16);
+                render_pass.draw_indexed(0..self.num_indices2, 0, 0..1);
+            }
         }
 
         self.queue.submit(std::iter::once(encoder.finish()));
