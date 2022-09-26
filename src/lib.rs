@@ -25,6 +25,9 @@ struct State {
     mouse_y: f64,
     diffuse_bind_group: wgpu::BindGroup,
     diffuse_texture: texture::Texture,
+    other_bind_group: wgpu::BindGroup,
+    other_texture: texture::Texture,
+    space_pressed: bool,
 }
 
 #[repr(C)]
@@ -109,6 +112,9 @@ impl State {
         let diffuse_bytes = include_bytes!("happy-tree.png");
         let diffuse_texture = texture::Texture::from_bytes(&device, &queue, diffuse_bytes, "happy-tree.png").unwrap();
 
+        let other_bytes = include_bytes!("sidey-tree.png");
+        let other_texture = texture::Texture::from_bytes(&device, &queue, other_bytes, "sidey-tree.png").unwrap();
+
         let texture_bind_group_layout =
             device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
                 entries: &[
@@ -148,6 +154,23 @@ impl State {
                         }
                     ],
                     label: Some("diffuse_bind_group"),
+                }
+            );
+
+            let other_bind_group = device.create_bind_group(
+                &wgpu::BindGroupDescriptor {
+                    layout: &texture_bind_group_layout,
+                    entries: &[
+                        wgpu::BindGroupEntry {
+                            binding: 0,
+                            resource: wgpu::BindingResource::TextureView(&other_texture.view),
+                        },
+                        wgpu::BindGroupEntry {
+                            binding: 1,
+                            resource: wgpu::BindingResource::Sampler(&other_texture.sampler),
+                        }
+                    ],
+                    label: Some("other_bind_group"),
                 }
             );
         
@@ -234,6 +257,9 @@ impl State {
             mouse_y: 0.0,
             diffuse_bind_group,
             diffuse_texture,
+            other_bind_group,
+            other_texture,
+            space_pressed: false,
         }
     }
 
@@ -261,6 +287,10 @@ impl State {
                     b: 0.1,
                     a: 1.0,
                 };
+                true
+            }
+            WindowEvent::KeyboardInput {input: KeyboardInput { virtual_keycode: Some(VirtualKeyCode::Space), state,  .. }, ..} => {
+                self.space_pressed = *state == ElementState::Pressed;
                 true
             }
             _ => false
@@ -291,7 +321,7 @@ impl State {
                 depth_stencil_attachment: None,
             });
             render_pass.set_pipeline(&self.render_pipeline);
-            render_pass.set_bind_group(0, &self.diffuse_bind_group, &[]);
+            render_pass.set_bind_group(0, if self.space_pressed { &self.diffuse_bind_group } else { &self.other_bind_group }, &[]);
             render_pass.set_vertex_buffer(0, self.vertex_buffer.slice(..));
             render_pass.set_index_buffer(self.index_buffer.slice(..), wgpu::IndexFormat::Uint16);
             render_pass.draw_indexed(0..self.num_indices, 0, 0..1);
