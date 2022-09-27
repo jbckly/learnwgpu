@@ -18,8 +18,8 @@ struct VertexOutput {
 @vertex
 fn vs_main( model: VertexInput ) -> VertexOutput {
     var out: VertexOutput;
-    var wobble: f32 = sin(time*10.0) * 0.05;
-    var sidewobble: f32 = sin(time*10.0) * 0.05;
+    var wobble: f32 = sin(time*10.0+f32(model.vertex_index)) * 0.05;
+    var sidewobble: f32 = sin(time*10.0+f32(model.vertex_index)) * 0.05;
     if (i32(model.vertex_index) > 0) {wobble = wobble * -1.0;}
     if (model.position.y > 0.0) {sidewobble = 0.0;}
     out.tex_coords = model.tex_coords;

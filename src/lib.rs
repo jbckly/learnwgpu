@@ -349,7 +349,6 @@ impl State {
 
     fn update(&mut self) {
         let time = self.start.elapsed().as_secs_f32();
-        println!("{}", time);
         self.queue.write_buffer(
             &self.time_buffer, 
             0, 
