@@ -1,9 +1,11 @@
-use wgpu::util::DeviceExt;
+use wgpu::{util::DeviceExt, BindGroupLayout};
 use winit::{
     event::*,
     event_loop::{ControlFlow, EventLoop},
     window::{WindowBuilder, Window},
 };
+
+use std::time::{Duration, Instant};
 
 mod texture;
 
@@ -24,11 +26,17 @@ struct State {
     mouse_x: f64,
     mouse_y: f64,
     diffuse_bind_group: wgpu::BindGroup,
+    #[warn(dead_code)]
     diffuse_texture: texture::Texture,
     other_bind_group: wgpu::BindGroup,
+    #[warn(dead_code)]
     other_texture: texture::Texture,
     space_pressed: bool,
+    time_bind_group: wgpu::BindGroup,
+    time_buffer: wgpu::Buffer,
+    start: Instant,
 }
+
 
 #[repr(C)]
 #[derive(Copy, Clone, Debug, bytemuck::Pod, bytemuck::Zeroable)]
@@ -173,6 +181,43 @@ impl State {
                     label: Some("other_bind_group"),
                 }
             );
+
+            let time_buffer = device.create_buffer_init(
+                &wgpu::util::BufferInitDescriptor {
+                    label: Some("time buffer"),
+                    contents: bytemuck::bytes_of(&std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_secs_f32()),
+                    usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
+                }
+            );
+
+            let time_bind_group_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+                entries: &[
+                    wgpu::BindGroupLayoutEntry {
+                        binding: 0,
+                        visibility: wgpu::ShaderStages::VERTEX,
+                        ty: wgpu::BindingType::Buffer {
+                            ty: wgpu::BufferBindingType::Uniform,
+                            has_dynamic_offset: false,
+                            min_binding_size: None,
+                        },
+                        count: None,
+                    },
+                ],
+                label: Some("time bind group layout"),
+            });
+
+            let time_bind_group = device.create_bind_group(
+                &wgpu::BindGroupDescriptor {
+                    layout: &time_bind_group_layout,
+                    entries: &[
+                        wgpu::BindGroupEntry {
+                            binding: 0,
+                            resource: time_buffer.as_entire_binding(),
+                        },
+                    ],
+                    label: Some("other_bind_group"),
+                }
+            );
         
 
         let clear_color = wgpu::Color::BLACK;
@@ -185,7 +230,9 @@ impl State {
         let render_pipeline_layout = 
             device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
                 label: Some("Render Pipeline Layout"),
-                bind_group_layouts: &[&texture_bind_group_layout],
+                bind_group_layouts: &[
+                    &texture_bind_group_layout,
+                    &time_bind_group_layout,],
                 push_constant_ranges: &[],
             });
 
@@ -260,6 +307,9 @@ impl State {
             other_bind_group,
             other_texture,
             space_pressed: false,
+            time_bind_group,
+            time_buffer,
+            start: Instant::now(),
         }
     }
 
@@ -298,7 +348,13 @@ impl State {
     }
 
     fn update(&mut self) {
-        //todo
+        let time = self.start.elapsed().as_secs_f32();
+        println!("{}", time);
+        self.queue.write_buffer(
+            &self.time_buffer, 
+            0, 
+            bytemuck::bytes_of(&time),
+        );
     }
 
     fn render(&mut self) -> Result<(), wgpu::SurfaceError> {
@@ -322,6 +378,7 @@ impl State {
             });
             render_pass.set_pipeline(&self.render_pipeline);
             render_pass.set_bind_group(0, if self.space_pressed { &self.diffuse_bind_group } else { &self.other_bind_group }, &[]);
+            render_pass.set_bind_group(1, &self.time_bind_group, &[]);
             render_pass.set_vertex_buffer(0, self.vertex_buffer.slice(..));
             render_pass.set_index_buffer(self.index_buffer.slice(..), wgpu::IndexFormat::Uint16);
             render_pass.draw_indexed(0..self.num_indices, 0, 0..1);
