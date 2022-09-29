@@ -5,7 +5,7 @@ use winit::{
     window::{WindowBuilder, Window},
 };
 
-use std::time::{Duration, Instant};
+// use std::time::{Duration, Instant};
 
 mod texture;
 
@@ -80,7 +80,8 @@ struct State {
     space_pressed: bool,
     time_bind_group: wgpu::BindGroup,
     time_buffer: wgpu::Buffer,
-    start: Instant,
+    // start: Instant,
+    start: f32,
     camera: Camera,
     camera_uniform: CameraUniform,
     camera_buffer: wgpu::Buffer,
@@ -322,7 +323,8 @@ impl State {
             let time_buffer = device.create_buffer_init(
                 &wgpu::util::BufferInitDescriptor {
                     label: Some("time buffer"),
-                    contents: bytemuck::bytes_of(&std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_secs_f32()),
+                    // contents: bytemuck::bytes_of(&std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_secs_f32()),
+                    contents: bytemuck::bytes_of(&0.0),
                     usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
                 }
             );
@@ -500,7 +502,8 @@ impl State {
             space_pressed: false,
             time_bind_group,
             time_buffer,
-            start: Instant::now(),
+            // start: Instant::now(),
+            start: 0.0,
             camera,
             camera_uniform,
             camera_buffer,
@@ -545,7 +548,10 @@ impl State {
     }
 
     fn update(&mut self) {
-        let time = self.start.elapsed().as_secs_f32();
+        // let time = self.start.elapsed().as_secs_f32();
+        self.start = self.start + 0.008;
+        let time = self.start;
+        println!("{}", time);
         self.queue.write_buffer(
             &self.time_buffer, 
             0, 
