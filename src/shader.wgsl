@@ -14,8 +14,16 @@ var<uniform> camera: CameraUniform;
 struct VertexInput {
     @location(0) position: vec3<f32>,
     @location(1) tex_coords: vec2<f32>,
-    @builtin(vertex_index) vertex_index: u32
+    @builtin(vertex_index) vertex_index: u32,
+    @builtin(instance_index) instance_index: u32,
 }
+
+struct InstanceInput {
+    @location(5) model_matrix_0: vec4<f32>,
+    @location(6) model_matrix_1: vec4<f32>,
+    @location(7) model_matrix_2: vec4<f32>,
+    @location(8) model_matrix_3: vec4<f32>,
+};
 
 struct VertexOutput {
     @builtin(position) clip_position: vec4<f32>,
@@ -23,15 +31,22 @@ struct VertexOutput {
 }
 
 @vertex
-fn vs_main( model: VertexInput ) -> VertexOutput {
+fn vs_main( model: VertexInput, instance: InstanceInput ) -> VertexOutput {
+    let model_matrix = mat4x4<f32>(
+        instance.model_matrix_0,
+        instance.model_matrix_1,
+        instance.model_matrix_2,
+        instance.model_matrix_3,
+    );
+
     var out: VertexOutput;
-    var wobble: f32 = sin(time*10.0+f32(model.vertex_index)) * 0.05;
-    var sidewobble: f32 = sin(time*10.0+f32(model.vertex_index)) * 0.05;
+    var wobble: f32 = sin(time*10.0+f32(model.vertex_index)+f32(model.instance_index)) * 0.05;
+    var sidewobble: f32 = sin(time*10.0+f32(model.vertex_index)+f32(model.instance_index)) * 0.05;
     var frontwobble: f32 = sin(time*10.0+f32(model.vertex_index)) * 0.05;
     if (i32(model.vertex_index) > 0) {wobble = wobble * -1.0;}
     if (model.position.y > 0.0) {sidewobble = 0.0;}
     out.tex_coords = model.tex_coords;
-    out.clip_position = camera.view_proj * vec4<f32>(model.position.x+sidewobble, model.position.y+wobble, model.position.z+frontwobble, 1.0);
+    out.clip_position = camera.view_proj * model_matrix * vec4<f32>(model.position.x+sidewobble, model.position.y+wobble, model.position.z+frontwobble, 1.0);
     return out;
 }
 
