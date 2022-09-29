@@ -40,7 +40,7 @@ fn vs_main( model: VertexInput, instance: InstanceInput ) -> VertexOutput {
     );
 
     var out: VertexOutput;
-    var wobble: f32 = sin(time*10.0+f32(model.vertex_index)+f32(model.instance_index)) * 0.05;
+    var wobble: f32 = sin(time*10.0+f32(model.vertex_index)+f32(model.instance_index)) * 0.005;
     var sidewobble: f32 = sin(time*10.0+f32(model.vertex_index)+f32(model.instance_index)) * 0.05;
     var frontwobble: f32 = sin(time*10.0+f32(model.vertex_index)) * 0.05;
     if (i32(model.vertex_index) > 0) {wobble = wobble * -1.0;}

@@ -13,12 +13,14 @@ mod texture;
 #[cfg(target_arch="wasm32")]
 use wasm_bindgen::prelude::*;
 
+const ROTATION_SPEED: f32 = 0.2 * std::f32::consts::PI / 60.0;
+
 struct Instance {
     position: cgmath::Vector3<f32>,
     rotation: cgmath::Quaternion<f32>,
 }
 
-const NUM_INSTANCES_PER_ROW: u32 = 10;
+const NUM_INSTANCES_PER_ROW: u32 = 1000;
 const INSTANCE_DISPLACEMENT: cgmath::Vector3<f32> = cgmath::Vector3::new(NUM_INSTANCES_PER_ROW as f32 * 0.5, 0.0, NUM_INSTANCES_PER_ROW as f32 * 0.5);
 
 
@@ -421,9 +423,9 @@ impl State {
             target: (0.0, 0.0, 0.0).into(),
             up: cgmath::Vector3::unit_y(),
             aspect: config.width as f32 / config.height as f32,
-            fovy: 45.0,
+            fovy: 80.0,
             znear: 0.1,
-            zfar: 100.0,
+            zfar: 1000.0,
         };
 
         let mut camera_uniform = CameraUniform::new();
@@ -485,7 +487,7 @@ impl State {
             &wgpu::util::BufferInitDescriptor {
                 label: Some("Instance buffer"),
                 contents: bytemuck::cast_slice(&instance_data),
-                usage: wgpu::BufferUsages::VERTEX,
+                usage: wgpu::BufferUsages::VERTEX | wgpu::BufferUsages::COPY_DST,
             },
         );
 
@@ -639,6 +641,22 @@ impl State {
         self.camera_controller.update_camera(&mut self.camera);
         self.camera_uniform.update_view_proj(&self.camera);
         self.queue.write_buffer(&self.camera_buffer, 0, bytemuck::cast_slice(&[self.camera_uniform]));
+
+        // for instance in &mut self.instances {
+        //     let amount = cgmath::Quaternion::from_angle_y(cgmath::Rad(ROTATION_SPEED));
+        //     let current = instance.rotation;
+        //     instance.rotation = amount * current;
+        // }
+        // let instance_data = self
+        //     .instances
+        //     .iter()
+        //     .map(Instance::to_raw)
+        //     .collect::<Vec<_>>();
+        // self.queue.write_buffer(
+        //     &self.instance_buffer,
+        //     0,
+        //     bytemuck::cast_slice(&instance_data),
+        // );
     }
 
     fn render(&mut self) -> Result<(), wgpu::SurfaceError> {
