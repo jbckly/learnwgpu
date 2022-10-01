@@ -1,12 +1,12 @@
 {
-  "name": "rustp",
+  "name": "learnwgpu",
   "version": "0.1.0",
   "files": [
-    "rustp_bg.wasm",
-    "rustp.js",
-    "rustp.d.ts"
+    "learnwgpu_bg.wasm",
+    "learnwgpu.js",
+    "learnwgpu.d.ts"
   ],
-  "module": "rustp.js",
-  "types": "rustp.d.ts",
+  "module": "learnwgpu.js",
+  "types": "learnwgpu.d.ts",
   "sideEffects": false
 }
