@@ -24,7 +24,7 @@ struct Instance {
     rotation: cgmath::Quaternion<f32>,
 }
 
-const NUM_INSTANCES_PER_ROW: u32 = 100;
+const NUM_INSTANCES_PER_ROW: u32 = 1000;
 const INSTANCE_DISPLACEMENT: cgmath::Vector3<f32> = cgmath::Vector3::new(NUM_INSTANCES_PER_ROW as f32 * 0.5, 0.0, NUM_INSTANCES_PER_ROW as f32 * 0.5);
 
 
@@ -682,11 +682,7 @@ impl State {
             render_pass.set_bind_group(2, &self.camera_bind_group, &[]);
 
             use model::DrawModel;
-            let mesh = &self.obj_model.meshes[0];
-            let material = &self.obj_model.materials[mesh.material];
-            render_pass.draw_mesh_instanced(&self.obj_model.meshes[0], material, 0..self.instances.len() as u32, &self.camera_bind_group);
-
-
+            render_pass.draw_model_instanced(&self.obj_model, 0..self.instances.len() as u32, &self.camera_bind_group);
         }
 
         self.queue.submit(std::iter::once(encoder.finish()));
