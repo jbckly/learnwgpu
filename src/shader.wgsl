@@ -40,13 +40,8 @@ fn vs_main( model: VertexInput, instance: InstanceInput ) -> VertexOutput {
     );
 
     var out: VertexOutput;
-    var wobble: f32 = sin(time*10.0+f32(model.vertex_index)+f32(model.instance_index)) * 0.005;
-    var sidewobble: f32 = sin(time*10.0+f32(model.vertex_index)+f32(model.instance_index)) * 0.05;
-    var frontwobble: f32 = sin(time*10.0+f32(model.vertex_index)) * 0.05;
-    if (i32(model.vertex_index) > 0) {wobble = wobble * -1.0;}
-    if (model.position.y > 0.0) {sidewobble = 0.0;}
     out.tex_coords = model.tex_coords;
-    out.clip_position = camera.view_proj * model_matrix * vec4<f32>(model.position.x+sidewobble, model.position.y+wobble, model.position.z+frontwobble, 1.0);
+    out.clip_position = camera.view_proj * model_matrix * vec4<f32>(model.position.xyz, 1.0);
     return out;
 }
 
