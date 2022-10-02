@@ -19,8 +19,7 @@ use wasm_bindgen::prelude::*;
 struct Instance {
     position: cgmath::Vector3<f32>,
     rotation: cgmath::Quaternion<f32>,
-    x_speed: f32,
-    z_speed: f32,
+    speed: f32,
 }
 
 const NUM_INSTANCES_PER_ROW: u32 = 10;
@@ -428,10 +427,7 @@ impl State {
                     let position = cgmath::Vector3 { x, y: 0.0, z };
 
                     let rotation = if position.is_zero() {
-                        cgmath::Quaternion::from_axis_angle(
-                            cgmath::Vector3::unit_z(),
-                            cgmath::Deg(0.0),
-                        )
+                        cgmath::Quaternion::from_axis_angle( cgmath::Vector3::unit_z(), cgmath::Deg(0.0),)
                     } else {
                         cgmath::Quaternion::from_axis_angle(
                             cgmath::Vector3::unit_y(),
@@ -442,8 +438,7 @@ impl State {
                     Instance {
                         position,
                         rotation,
-                        x_speed: x * -0.0002,
-                        z_speed: z * -0.0002,
+                        speed: x * -0.0002,
                     }
                 })
             })
@@ -630,7 +625,9 @@ impl State {
         );
 
         for instance in &mut self.instances {
-            instance.position = instance.position + cgmath::Vector3 {x: instance.x_speed, y: 0.0, z: instance.z_speed};
+
+            instance.position = instance.position
+                + instance.rotation * cgmath::Vector3 {x: instance.speed, y: 0.0, z: 0.0};
         }
         let instance_data = self
             .instances
