@@ -144,6 +144,7 @@ struct State {
     camera_buffer: wgpu::Buffer,
     camera_bind_group: wgpu::BindGroup,
     camera_controller: CameraController,
+    guy_controller: GuyController,
     instances: Vec<Instance>,
     instance_buffer: wgpu::Buffer,
     depth_texture: texture::Texture,
@@ -159,6 +160,87 @@ struct CameraController {
     is_left_pressed: bool,
     is_right_pressed: bool,
 }
+struct GuyController {
+    is_forward_pressed: bool,
+    is_backward_pressed: bool,
+    is_left_pressed: bool,
+    is_right_pressed: bool,
+}
+
+impl GuyController {
+    fn new() -> Self {
+        Self {
+            is_forward_pressed: false,
+            is_backward_pressed: false,
+            is_left_pressed: false,
+            is_right_pressed: false,
+        }
+    }
+
+    fn process_events(&mut self, event: &WindowEvent) -> bool {
+        match event {
+            WindowEvent::KeyboardInput {
+                input:
+                    KeyboardInput {
+                        state,
+                        virtual_keycode: Some(keycode),
+                        ..
+                    },
+                ..
+            } => {
+                let is_pressed = *state == ElementState::Pressed;
+                match keycode {
+                    VirtualKeyCode::I => {
+                        self.is_forward_pressed = is_pressed;
+                        true
+                    }
+                    VirtualKeyCode::J => {
+                        self.is_left_pressed = is_pressed;
+                        true
+                    }
+                    VirtualKeyCode::K => {
+                        self.is_backward_pressed = is_pressed;
+                        true
+                    }
+                    VirtualKeyCode::L => {
+                        self.is_right_pressed = is_pressed;
+                        true
+                    }
+                    _ => false,
+                }
+            }
+            _ => false,
+        }
+    }
+    
+    fn update_guy(&self, ins: &mut Instance) {
+        const ROTATION_SPEED: f32 = 0.4 * std::f32::consts::PI / 60.0;
+
+        // Prevents glitching when camera gets too close to the
+        // center of the scene.
+        if self.is_forward_pressed {
+            ins.speed = 0.05;
+        } else if self.is_backward_pressed {
+            ins.speed = -0.05;
+        } else {
+            ins.speed = 0.0;
+        }
+
+
+        if self.is_right_pressed {
+            // Rescale the distance between the target and eye so
+            // that it doesn't change. The eye therefore still
+            // lies on the circle made by the target and eye.
+            let amount = cgmath::Quaternion::from_angle_y(cgmath::Rad(-ROTATION_SPEED));
+            ins.rotation = amount * ins.rotation;
+        }
+        if self.is_left_pressed {
+            let amount = cgmath::Quaternion::from_angle_y(cgmath::Rad(ROTATION_SPEED));
+            ins.rotation = amount * ins.rotation;
+        }
+    }
+}
+
 
 impl CameraController {
     fn new(speed: f32) -> Self {
@@ -416,6 +498,7 @@ impl State {
         });
 
         let camera_controller = CameraController::new(0.2);
+        let guy_controller = GuyController::new();
 
         const SPACE_BETWEEN: f32 = 3.0;
         let instances = (0..NUM_INSTANCES_PER_ROW)
@@ -551,6 +634,7 @@ impl State {
             camera_buffer,
             camera_bind_group,
             camera_controller,
+            guy_controller,
             instances,
             instance_buffer,
             depth_texture,
@@ -606,7 +690,7 @@ impl State {
                 self.space_pressed = *state == ElementState::Pressed;
                 true
             }
-            _ => self.camera_controller.process_events(event),
+            _ => { self.camera_controller.process_events(event) || self.guy_controller.process_events(event) }
         }
     }
 
@@ -617,6 +701,7 @@ impl State {
         self.queue
             .write_buffer(&self.time_buffer, 0, bytemuck::bytes_of(&time));
         self.camera_controller.update_camera(&mut self.camera);
+        self.guy_controller.update_guy(&mut self.instances[0]);
         self.camera_uniform.update_view_proj(&self.camera);
         self.queue.write_buffer(
             &self.camera_buffer,
