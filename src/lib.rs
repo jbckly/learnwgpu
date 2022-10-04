@@ -22,7 +22,7 @@ struct Instance {
     speed: f32,
 }
 
-const NUM_INSTANCES_PER_ROW: u32 = 10;
+const NUM_INSTANCES_PER_ROW: u32 = 2;
 
 #[repr(C)]
 #[derive(Copy, Clone, bytemuck::Pod, bytemuck::Zeroable)]
@@ -521,7 +521,7 @@ impl State {
                     Instance {
                         position,
                         rotation,
-                        speed: x * -0.0002,
+                        speed: x * -0.00002,
                     }
                 })
             })

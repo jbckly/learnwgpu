@@ -55,6 +55,6 @@ var s_diffuse: sampler;
 
 @fragment
 fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
-    let light_str = dot(in.normal, normalize(vec3<f32>(0.0,1.0, 0.4))) + 1.0;
+    let light_str = dot(in.normal, normalize(vec3<f32>(0.0, 1.0, 1.0))) + 1.0;
     return textureSample(t_diffuse, s_diffuse, in.tex_coords)*light_str;
 }
