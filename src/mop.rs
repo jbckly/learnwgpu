@@ -36,10 +36,11 @@ impl Add for Coord {
 pub struct Mop {
     seed: f32,
     pub loc: Coord,
+    pub height: f32,
     pub dir: f32,
     obj: Option<Coord>,
     hunger: f32,
-    age: u32,
+    age: i32,
 }
 
 impl Mop {
@@ -53,6 +54,7 @@ impl Mop {
         Self {
             seed,
             loc: Coord { x: 0.0, y: 0.0 },
+            height: 0.0,
             dir: if let Some(d) = dir {
                 d
             } else {
@@ -60,7 +62,7 @@ impl Mop {
             },
             obj: None,
             hunger: 0.2,
-            age: (seed * 5000.0) as u32,
+            age: (seed * -5000.0) as i32,
         }
     }
 
@@ -69,8 +71,9 @@ impl Mop {
         self.hunger += HUNGER_STEP;
         let rot: Basis2<f32> = cgmath::Rotation2::from_angle(cgmath::Deg(self.dir));
         self.dir += ROTATE_STEP;
-        if self.age > 5000 {
+        if self.age > 0 {
             self.loc = self.loc + Coord::from_vec2(rot.rotate_vector(cgmath::Vector2::unit_x() * MOVE_STEP));
+            self.height = (self.age as f32 / 10.0).sin() * 6.0 + (self.age as f32/100.0).sin() * 12.0 + (self.age as f32).sin();
         };
     }
 }

@@ -79,7 +79,7 @@ fn from_mop_to_raw(mop: &Mop) -> InstanceRaw {
     InstanceRaw {
         model: 
             (
-                cgmath::Matrix4::from_translation(cgmath::Vector3{x: mop.loc.x, y: 0.0, z: mop.loc.y},)
+                cgmath::Matrix4::from_translation(cgmath::Vector3{x: mop.loc.x, y: mop.height, z: mop.loc.y},)
                 * cgmath::Matrix4::from(cgmath::Quaternion::from_axis_angle(
                     cgmath::Vector3::unit_y(),
                     cgmath::Deg(mop.dir),
