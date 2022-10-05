@@ -24,7 +24,7 @@ struct Instance {
     speed: f32,
 }
 
-const NUM_INSTANCES_PER_ROW: u32 = 2;
+const NUM_MOPS: u32 = 10_000;
 
 #[repr(C)]
 #[derive(Copy, Clone, bytemuck::Pod, bytemuck::Zeroable)]
@@ -545,7 +545,7 @@ impl State {
         //     })
         //     .collect::<Vec<_>>();
         let instances: Vec<Instance> = Vec::new();
-        let mops: Vec<Mop> = (0..10).map(|_| {Mop::new(None, None)}).collect();
+        let mops: Vec<Mop> = (0..NUM_MOPS).map(|_| {Mop::new(None, None)}).collect();
 
         let instance_data = mops.iter().map(from_mop_to_raw).collect::<Vec<_>>();
         let instance_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
