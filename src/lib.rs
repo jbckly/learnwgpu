@@ -1,4 +1,5 @@
 use cgmath::prelude::*;
+use mop::Mop;
 use wgpu::{util::DeviceExt, BindGroupLayout};
 use winit::{
     event::*,
@@ -9,6 +10,7 @@ use winit::{
 mod model;
 mod resources;
 mod texture;
+mod mop;
 use model::Vertex;
 
 // use std::time::{Duration, Instant};
@@ -69,6 +71,21 @@ impl InstanceRaw {
                 },
             ],
         }
+    }
+
+}
+
+fn from_mop_to_raw(mop: &Mop) -> InstanceRaw {
+    InstanceRaw {
+        model: 
+            (
+                cgmath::Matrix4::from_translation(cgmath::Vector3{x: mop.loc.x, y: 0.0, z: mop.loc.y},)
+                * cgmath::Matrix4::from(cgmath::Quaternion::from_axis_angle(
+                    cgmath::Vector3::unit_y(),
+                    cgmath::Deg(mop.dir),
+                ))
+            )
+            .into()
     }
 }
 
@@ -149,6 +166,7 @@ struct State {
     instance_buffer: wgpu::Buffer,
     depth_texture: texture::Texture,
     obj_model: model::Model,
+    mops: Vec<Mop>,
 }
 
 const INDICES: &[u16] = &[0, 1, 4, 1, 2, 4, 2, 3, 4];
@@ -500,34 +518,36 @@ impl State {
         let camera_controller = CameraController::new(0.2);
         let guy_controller = GuyController::new();
 
-        const SPACE_BETWEEN: f32 = 3.0;
-        let instances = (0..NUM_INSTANCES_PER_ROW)
-            .flat_map(|z| {
-                (0..NUM_INSTANCES_PER_ROW).map(move |x| {
-                    let x = SPACE_BETWEEN * (x as f32 - NUM_INSTANCES_PER_ROW as f32 / 2.0);
-                    let z = SPACE_BETWEEN * (z as f32 - NUM_INSTANCES_PER_ROW as f32 / 2.0);
+        // const SPACE_BETWEEN: f32 = 3.0;
+        // let instances = (0..NUM_INSTANCES_PER_ROW)
+        //     .flat_map(|z| {
+        //         (0..NUM_INSTANCES_PER_ROW).map(move |x| {
+        //             let x = SPACE_BETWEEN * (x as f32 - NUM_INSTANCES_PER_ROW as f32 / 2.0);
+        //             let z = SPACE_BETWEEN * (z as f32 - NUM_INSTANCES_PER_ROW as f32 / 2.0);
 
-                    let position = cgmath::Vector3 { x, y: 0.0, z };
+        //             let position = cgmath::Vector3 { x, y: 0.0, z };
 
-                    let rotation = if position.is_zero() {
-                        cgmath::Quaternion::from_axis_angle( cgmath::Vector3::unit_z(), cgmath::Deg(0.0),)
-                    } else {
-                        cgmath::Quaternion::from_axis_angle(
-                            cgmath::Vector3::unit_y(),
-                            cgmath::Deg(20.0),
-                        )
-                    };
+        //             let rotation = if position.is_zero() {
+        //                 cgmath::Quaternion::from_axis_angle( cgmath::Vector3::unit_z(), cgmath::Deg(0.0),)
+        //             } else {
+        //                 cgmath::Quaternion::from_axis_angle(
+        //                     cgmath::Vector3::unit_y(),
+        //                     cgmath::Deg(20.0),
+        //                 )
+        //             };
 
-                    Instance {
-                        position,
-                        rotation,
-                        speed: x * -0.00002,
-                    }
-                })
-            })
-            .collect::<Vec<_>>();
+        //             Instance {
+        //                 position,
+        //                 rotation,
+        //                 speed: x * -0.00002,
+        //             }
+        //         })
+        //     })
+        //     .collect::<Vec<_>>();
+        let instances: Vec<Instance> = Vec::new();
+        let mops: Vec<Mop> = (0..10).map(|_| {Mop::new(None, None)}).collect();
 
-        let instance_data = instances.iter().map(Instance::to_raw).collect::<Vec<_>>();
+        let instance_data = mops.iter().map(from_mop_to_raw).collect::<Vec<_>>();
         let instance_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: Some("Instance buffer"),
             contents: bytemuck::cast_slice(&instance_data),
@@ -636,6 +656,7 @@ impl State {
             camera_controller,
             guy_controller,
             instances,
+            mops,
             instance_buffer,
             depth_texture,
             obj_model,
@@ -701,7 +722,7 @@ impl State {
         self.queue
             .write_buffer(&self.time_buffer, 0, bytemuck::bytes_of(&time));
         self.camera_controller.update_camera(&mut self.camera);
-        self.guy_controller.update_guy(&mut self.instances[0]);
+        // self.guy_controller.update_guy(&mut self.instances[0]);
         self.camera_uniform.update_view_proj(&self.camera);
         self.queue.write_buffer(
             &self.camera_buffer,
@@ -710,14 +731,17 @@ impl State {
         );
 
         for instance in &mut self.instances {
-
             instance.position = instance.position
                 + instance.rotation * cgmath::Vector3 {x: instance.speed, y: 0.0, z: 0.0};
         }
+
+        for mop in &mut self.mops {
+            mop.tick();
+        }
         let instance_data = self
-            .instances
+            .mops
             .iter()
-            .map(Instance::to_raw)
+            .map(from_mop_to_raw)
             .collect::<Vec<_>>();
         self.queue.write_buffer(
             &self.instance_buffer,
@@ -774,7 +798,7 @@ impl State {
             use model::DrawModel;
             render_pass.draw_model_instanced(
                 &self.obj_model,
-                0..self.instances.len() as u32,
+                0..self.mops.len() as u32,
                 &self.camera_bind_group,
             );
         }
