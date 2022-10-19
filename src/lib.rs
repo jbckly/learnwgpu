@@ -1,6 +1,6 @@
 use cgmath::prelude::*;
 use mop::Mop;
-use wgpu::{util::DeviceExt, BindGroupLayout};
+use wgpu::{util::DeviceExt};
 use winit::{
     event::*,
     event_loop::{ControlFlow, EventLoop},
@@ -11,7 +11,7 @@ mod model;
 mod resources;
 mod texture;
 mod mop;
-use model::Vertex;
+use model::{Vertex, PointVertex};
 
 // use std::time::{Duration, Instant};
 
@@ -43,7 +43,7 @@ impl Instance {
 }
 
 impl InstanceRaw {
-    fn desc<'a>() -> wgpu::VertexBufferLayout<'a> {
+    fn desc() -> wgpu::VertexBufferLayout<'static> {
         use std::mem;
         wgpu::VertexBufferLayout {
             array_stride: mem::size_of::<InstanceRaw>() as wgpu::BufferAddress,
@@ -134,7 +134,104 @@ impl CameraUniform {
     }
 }
 
+const line_vertices: &[PointVertex] = &[
+    PointVertex { position: [0.0, 0.0, 0.0]},
+    PointVertex { position: [0.5, 1.0, 0.0]},
+
+    PointVertex { position: [0.5, 1.0, 0.0]},
+    PointVertex { position: [0.5, 2.0, 0.0]},
+
+    PointVertex { position: [0.5, 2.0, 0.0]},
+    PointVertex { position: [0.0, 3.0, 0.0]},
+];
+struct LinePass {
+    line_vertex_buffer: wgpu::Buffer,
+    line_render_pipeline: wgpu::RenderPipeline,
+}
+
+impl LinePass {
+    fn new(
+        device: &wgpu::Device,
+        config: &wgpu::SurfaceConfiguration,
+        camera_bind_group_layout: &wgpu::BindGroupLayout
+    ) -> Self {
+        let line_vertex_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+            label: Some("Line Pass VB"),
+            contents: bytemuck::cast_slice(line_vertices),
+            usage: wgpu::BufferUsages::VERTEX,
+        });
+
+        let line_shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
+            label: Some("Shader for lines"),
+            source: wgpu::ShaderSource::Wgsl(include_str!("shader_line.wgsl").into()),
+        });
+
+        let line_render_pipeline_layout =
+            device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+                label: Some("Render Pipeline Line Layout"),
+                bind_group_layouts: &[
+                    &camera_bind_group_layout,
+                ],
+                push_constant_ranges: &[],
+            });
+
+
+        let line_render_pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
+            label: Some("Render Pipeline"),
+            layout: Some(&line_render_pipeline_layout),
+            vertex: wgpu::VertexState {
+                module: &line_shader,
+                entry_point: "vs_main",
+                buffers: &[model::PointVertex::desc()],
+            },
+            fragment: Some(wgpu::FragmentState {
+                module: &line_shader,
+                entry_point: "fs_main",
+                targets: &[Some(wgpu::ColorTargetState {
+                    format: config.format,
+                    blend: Some(wgpu::BlendState::REPLACE),
+                    write_mask: wgpu::ColorWrites::ALL,
+                })],
+            }),
+            primitive: wgpu::PrimitiveState {
+                topology: wgpu::PrimitiveTopology::LineList,
+                strip_index_format: None,
+                ..Default::default()
+            },
+            depth_stencil: None, 
+            multisample: wgpu::MultisampleState::default(),
+            multiview: None,
+        });
+
+        LinePass {
+            line_vertex_buffer,
+            line_render_pipeline,
+        }
+    }
+
+
+    fn render(&self, view: &wgpu::TextureView, encoder: &mut wgpu::CommandEncoder, camera_bind_group: &wgpu::BindGroup) {
+        let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
+            label: Some("Depth Visual Render Pass"),
+            color_attachments: &[Some(wgpu::RenderPassColorAttachment {
+                view: &view,
+                resolve_target: None,
+                ops: wgpu::Operations {
+                    load: wgpu::LoadOp::Load,
+                    store: true,
+                },
+            })],
+            depth_stencil_attachment: None,
+        });
+        render_pass.set_pipeline(&self.line_render_pipeline);
+        render_pass.set_bind_group(0, camera_bind_group, &[]);
+        render_pass.set_vertex_buffer(0, self.line_vertex_buffer.slice(..));
+        render_pass.draw(0..line_vertices.len() as u32, 0..1);
+    }
+}
+
 struct State {
+    window: Window,
     surface: wgpu::Surface,
     device: wgpu::Device,
     queue: wgpu::Queue,
@@ -167,6 +264,7 @@ struct State {
     depth_texture: texture::Texture,
     obj_model: model::Model,
     mops: Vec<Mop>,
+    line_pass: LinePass,
 }
 
 const INDICES: &[u16] = &[0, 1, 4, 1, 2, 4, 2, 3, 4];
@@ -340,11 +438,11 @@ impl CameraController {
 }
 
 impl State {
-    async fn new(window: &Window) -> Self {
+    async fn new(window: Window) -> Self {
         let size = window.inner_size();
 
         let instance = wgpu::Instance::new(wgpu::Backends::all());
-        let surface = unsafe { instance.create_surface(window) };
+        let surface = unsafe { instance.create_surface(&window) };
         let adapter = instance
             .request_adapter(&wgpu::RequestAdapterOptions {
                 power_preference: wgpu::PowerPreference::default(),
@@ -564,6 +662,7 @@ impl State {
             source: wgpu::ShaderSource::Wgsl(include_str!("shader.wgsl").into()),
         });
 
+
         let render_pipeline_layout =
             device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
                 label: Some("Render Pipeline Layout"),
@@ -574,6 +673,7 @@ impl State {
                 ],
                 push_constant_ranges: &[],
             });
+
 
         let render_pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
             label: Some("Render Pipeline"),
@@ -616,6 +716,8 @@ impl State {
             multiview: None,
         });
 
+
+
         let index_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: Some("Index Buffer"),
             contents: bytemuck::cast_slice(INDICES),
@@ -628,8 +730,11 @@ impl State {
             resources::load_model("egg.obj", &device, &queue, &texture_bind_group_layout)
                 .await
                 .unwrap();
+        
+        let line_pass = LinePass::new(&device, &config, &camera_bind_group_layout);
 
         Self {
+            window,
             surface,
             device,
             queue,
@@ -660,6 +765,7 @@ impl State {
             instance_buffer,
             depth_texture,
             obj_model,
+            line_pass,
         }
     }
 
@@ -760,6 +866,7 @@ impl State {
             .create_command_encoder(&wgpu::CommandEncoderDescriptor {
                 label: Some("Render Encoder"),
             });
+
         {
             let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
                 label: Some("Render Pass"),
@@ -802,6 +909,7 @@ impl State {
                 &self.camera_bind_group,
             );
         }
+        self.line_pass.render(&view, &mut encoder, &self.camera_bind_group);
 
         self.queue.submit(std::iter::once(encoder.finish()));
         output.present();
@@ -843,13 +951,13 @@ pub async fn run() {
             .expect("Couldn't append canvas to document body");
     }
 
-    let mut state = State::new(&window).await;
+    let mut state = State::new(window).await;
 
     event_loop.run(move |event, _, control_flow| match event {
         Event::WindowEvent {
             ref event,
             window_id,
-        } if window_id == window.id() => {
+        } if window_id == state.window.id() => {
             if !state.input(event) {
                 match event {
                     WindowEvent::CloseRequested
@@ -875,7 +983,7 @@ pub async fn run() {
                 }
             }
         }
-        Event::RedrawRequested(window_id) if window_id == window.id() => {
+        Event::RedrawRequested(window_id) if window_id == state.window.id() => {
             state.update();
             match state.render() {
                 Ok(_) => {}
@@ -885,7 +993,7 @@ pub async fn run() {
             }
         }
         Event::MainEventsCleared => {
-            window.request_redraw();
+            state.window.request_redraw();
         }
         _ => {}
     });
