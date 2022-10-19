@@ -135,14 +135,134 @@ impl CameraUniform {
 }
 
 const line_vertices: &[PointVertex] = &[
-    PointVertex { position: [0.0, 0.0, 0.0]},
-    PointVertex { position: [0.5, 1.0, 0.0]},
+    PointVertex { position: [-0.65599609, -0.54207031 * -1.0, 0.0] },
+    PointVertex { position: [-0.66372070, 0.66203125 * -1.0, 0.0] },
 
-    PointVertex { position: [0.5, 1.0, 0.0]},
-    PointVertex { position: [0.5, 2.0, 0.0]},
+    PointVertex { position: [-0.66372070, 0.66203125 * -1.0, 0.0] },
+    PointVertex { position: [-0.66871094, 0.03707031 * -1.0, 0.0] },
 
-    PointVertex { position: [0.5, 2.0, 0.0]},
-    PointVertex { position: [0.0, 3.0, 0.0]},
+    PointVertex { position: [-0.66871094, 0.03707031 * -1.0, 0.0] },
+    PointVertex { position: [-0.53179687, -0.15143229 * -1.0, 0.0] },
+
+    PointVertex { position: [-0.53179687, -0.15143229 * -1.0, 0.0] },
+    PointVertex { position: [-0.42811523, -0.21807292 * -1.0, 0.0] },
+
+    PointVertex { position: [-0.42811523, -0.21807292 * -1.0, 0.0] },
+    PointVertex { position: [-0.32668945, -0.10976562 * -1.0, 0.0] },
+
+    PointVertex { position: [-0.32668945, -0.10976562 * -1.0, 0.0] },
+    PointVertex { position: [-0.31019531, 0.13096354 * -1.0, 0.0] },
+
+    PointVertex { position: [-0.31019531, 0.13096354 * -1.0, 0.0] },
+    PointVertex { position: [-0.29773437, 0.34843750 * -1.0, 0.0] },
+
+    PointVertex { position: [-0.29773437, 0.34843750 * -1.0, 0.0] },
+    PointVertex { position: [-0.36664063, 0.44531250 * -1.0, 0.0] },
+
+    PointVertex { position: [-0.36664063, 0.44531250 * -1.0, 0.0] },
+    PointVertex { position: [-0.42140625, 0.40320313 * -1.0, 0.0] },
+
+    PointVertex { position: [-0.42140625, 0.40320313 * -1.0, 0.0] },
+    PointVertex { position: [-0.41736328, 0.24743490 * -1.0, 0.0] },
+
+    PointVertex { position: [-0.41736328, 0.24743490 * -1.0, 0.0] },
+    PointVertex { position: [-0.37346680, 0.15343750 * -1.0, 0.0] },
+
+    PointVertex { position: [-0.37346680, 0.15343750 * -1.0, 0.0] },
+    PointVertex { position: [-0.27108398, 0.15343750 * -1.0, 0.0] },
+
+    PointVertex { position: [-0.27108398, 0.15343750 * -1.0, 0.0] },
+    PointVertex { position: [-0.16586914, 0.11730469 * -1.0, 0.0] },
+
+    PointVertex { position: [-0.16586914, 0.11730469 * -1.0, 0.0] },
+    PointVertex { position: [-0.07198242, 0.11450521 * -1.0, 0.0] },
+
+    PointVertex { position: [-0.07198242, 0.11450521 * -1.0, 0.0] },
+    PointVertex { position: [-0.05379883, 0.04309896 * -1.0, 0.0] },
+
+    PointVertex { position: [-0.05379883, 0.04309896 * -1.0, 0.0] },
+    PointVertex { position: [-0.12674805, -0.02223958 * -1.0, 0.0] },
+
+    PointVertex { position: [-0.12674805, -0.02223958 * -1.0, 0.0] },
+    PointVertex { position: [-0.23304687, -0.01871094 * -1.0, 0.0] },
+
+    PointVertex { position: [-0.23304687, -0.01871094 * -1.0, 0.0] },
+    PointVertex { position: [-0.26419922, 0.10899740 * -1.0, 0.0] },
+
+    PointVertex { position: [-0.26419922, 0.10899740 * -1.0, 0.0] },
+    PointVertex { position: [-0.23636719, 0.22424479 * -1.0, 0.0] },
+
+    PointVertex { position: [-0.23636719, 0.22424479 * -1.0, 0.0] },
+    PointVertex { position: [-0.19717773, 0.30233073 * -1.0, 0.0] },
+
+    PointVertex { position: [-0.19717773, 0.30233073 * -1.0, 0.0] },
+    PointVertex { position: [-0.11142578, 0.33385417 * -1.0, 0.0] },
+
+    PointVertex { position: [-0.11142578, 0.33385417 * -1.0, 0.0] },
+    PointVertex { position: [-0.03119141, 0.33385417 * -1.0, 0.0] },
+
+    PointVertex { position: [-0.03119141, 0.33385417 * -1.0, 0.0] },
+    PointVertex { position: [0.01209961, 0.31968750 * -1.0, 0.0] },
+
+    PointVertex { position: [0.01209961, 0.31968750 * -1.0, 0.0] },
+    PointVertex { position: [0.03260742, 0.30291667 * -1.0, 0.0] },
+
+    PointVertex { position: [0.03260742, 0.30291667 * -1.0, 0.0] },
+    PointVertex { position: [0.09857422, 0.20313802 * -1.0, 0.0] },
+
+    PointVertex { position: [0.09857422, 0.20313802 * -1.0, 0.0] },
+    PointVertex { position: [0.19447266, 0.00919271 * -1.0, 0.0] },
+
+    PointVertex { position: [0.19447266, 0.00919271 * -1.0, 0.0] },
+    PointVertex { position: [0.22881836, -0.14255208 * -1.0, 0.0] },
+
+    PointVertex { position: [0.22881836, -0.14255208 * -1.0, 0.0] },
+    PointVertex { position: [0.22881836, 0.08143229 * -1.0, 0.0] },
+
+    PointVertex { position: [0.22881836, 0.08143229 * -1.0, 0.0] },
+    PointVertex { position: [0.22881836, 0.13290365 * -1.0, 0.0] },
+
+    PointVertex { position: [0.22881836, 0.13290365 * -1.0, 0.0] },
+    PointVertex { position: [0.27603516, 0.19622396 * -1.0, 0.0] },
+
+    PointVertex { position: [0.27603516, 0.19622396 * -1.0, 0.0] },
+    PointVertex { position: [0.32259766, 0.19622396 * -1.0, 0.0] },
+
+    PointVertex { position: [0.32259766, 0.19622396 * -1.0, 0.0] },
+    PointVertex { position: [0.39010742, 0.15372396 * -1.0, 0.0] },
+
+    PointVertex { position: [0.39010742, 0.15372396 * -1.0, 0.0] },
+    PointVertex { position: [0.48239258, 0.01796875 * -1.0, 0.0] },
+
+    PointVertex { position: [0.48239258, 0.01796875 * -1.0, 0.0] },
+    PointVertex { position: [0.48435547, -0.09550781 * -1.0, 0.0] },
+
+    PointVertex { position: [0.48435547, -0.09550781 * -1.0, 0.0] },
+    PointVertex { position: [0.48627930, -0.15149740 * -1.0, 0.0] },
+
+    PointVertex { position: [0.48627930, -0.15149740 * -1.0, 0.0] },
+    PointVertex { position: [0.50114258, 0.12231771 * -1.0, 0.0] },
+
+    PointVertex { position: [0.50114258, 0.12231771 * -1.0, 0.0] },
+    PointVertex { position: [0.49539062, 0.29201823 * -1.0, 0.0] },
+
+    PointVertex { position: [0.49539062, 0.29201823 * -1.0, 0.0] },
+    PointVertex { position: [0.44889648, 0.39617188 * -1.0, 0.0] },
+
+    PointVertex { position: [0.44889648, 0.39617188 * -1.0, 0.0] },
+    PointVertex { position: [0.30957031, 0.42516927 * -1.0, 0.0] },
+
+    PointVertex { position: [0.30957031, 0.42516927 * -1.0, 0.0] },
+    PointVertex { position: [0.16799805, 0.46500000 * -1.0, 0.0] },
+
+    PointVertex { position: [0.16799805, 0.46500000 * -1.0, 0.0] },
+    PointVertex { position: [0.01589844, 0.47347656 * -1.0, 0.0] },
+
+    PointVertex { position: [0.01589844, 0.47347656 * -1.0, 0.0] },
+    PointVertex { position: [-0.26048828, 0.43906250 * -1.0, 0.0] },
+
+    PointVertex { position: [-0.26048828, 0.43906250 * -1.0, 0.0] },
+    PointVertex { position: [-0.37705078, 0.45567708 * -1.0, 0.0] },
 ];
 struct LinePass {
     line_vertex_buffer: wgpu::Buffer,
