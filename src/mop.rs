@@ -3,8 +3,8 @@ use std::ops::Add;
 use cgmath::{Basis2, Rotation};
 use rand::Rng;
 
-const MOVE_STEP: f32 = 1.0;
-const ROTATE_STEP: f32 = 1.0;
+const MOVE_STEP: f32 = 0.02;
+const ROTATE_STEP: f32 = 0.2;
 const HUNGER_STEP: f32 = 0.0001;
 
 #[derive(Clone, Copy, Debug)]
@@ -62,7 +62,7 @@ impl Mop {
             },
             obj: None,
             hunger: 0.2,
-            age: (seed * -5000.0) as i32,
+            age: (seed * -1000.0) as i32,
         }
     }
 
@@ -73,7 +73,7 @@ impl Mop {
         self.dir += ROTATE_STEP;
         if self.age > 0 {
             self.loc = self.loc + Coord::from_vec2(rot.rotate_vector(cgmath::Vector2::unit_x() * MOVE_STEP));
-            self.height = (self.age as f32 / 10.0).sin() * 6.0 + (self.age as f32/100.0).sin() * 12.0 + (self.age as f32).sin();
+            self.height = (self.age as f32 / 10.0).sin() * 0.1; // + (self.age as f32/100.0).sin() * 12.0 + (self.age as f32).sin();
         };
     }
 }
