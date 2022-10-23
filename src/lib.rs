@@ -1,6 +1,6 @@
 use cgmath::prelude::*;
 use mop::Mop;
-use wgpu::{util::DeviceExt};
+use wgpu::util::DeviceExt;
 use winit::{
     event::*,
     event_loop::{ControlFlow, EventLoop},
@@ -8,15 +8,19 @@ use winit::{
 };
 
 mod model;
+mod mop;
 mod resources;
 mod texture;
-mod mop;
-use model::{Vertex, PointVertex};
+mod point;
 
 // use std::time::{Duration, Instant};
 
 #[cfg(target_arch = "wasm32")]
 use wasm_bindgen::prelude::*;
+
+pub trait Vertex {
+    fn desc<'a>() -> wgpu::VertexBufferLayout<'a>;
+}
 
 struct Instance {
     position: cgmath::Vector3<f32>,
@@ -72,20 +76,19 @@ impl InstanceRaw {
             ],
         }
     }
-
 }
 
 fn from_mop_to_raw(mop: &Mop) -> InstanceRaw {
     InstanceRaw {
-        model: 
-            (
-                cgmath::Matrix4::from_translation(cgmath::Vector3{x: mop.loc.x, y: mop.height, z: mop.loc.y},)
-                * cgmath::Matrix4::from(cgmath::Quaternion::from_axis_angle(
-                    cgmath::Vector3::unit_y(),
-                    cgmath::Deg(mop.dir),
-                ))
-            )
-            .into()
+        model: (cgmath::Matrix4::from_translation(cgmath::Vector3 {
+            x: mop.loc.x,
+            y: mop.height,
+            z: mop.loc.y,
+        }) * cgmath::Matrix4::from(cgmath::Quaternion::from_axis_angle(
+            cgmath::Vector3::unit_y(),
+            cgmath::Deg(mop.dir),
+        )))
+        .into(),
     }
 }
 
@@ -134,256 +137,7 @@ impl CameraUniform {
     }
 }
 
-// const line_vertices: &[PointVertex] = &[
-    // PointVertex { position: [-0.65599609, -0.54207031 * -1.0, 0.0] },
-    // PointVertex { position: [-0.66372070, 0.66203125 * -1.0, 0.0] },
-
-    // PointVertex { position: [-0.66372070, 0.66203125 * -1.0, 0.0] },
-    // PointVertex { position: [-0.66871094, 0.03707031 * -1.0, 0.0] },
-
-    // PointVertex { position: [-0.66871094, 0.03707031 * -1.0, 0.0] },
-    // PointVertex { position: [-0.53179687, -0.15143229 * -1.0, 0.0] },
-
-    // PointVertex { position: [-0.53179687, -0.15143229 * -1.0, 0.0] },
-    // PointVertex { position: [-0.42811523, -0.21807292 * -1.0, 0.0] },
-
-    // PointVertex { position: [-0.42811523, -0.21807292 * -1.0, 0.0] },
-    // PointVertex { position: [-0.32668945, -0.10976562 * -1.0, 0.0] },
-
-    // PointVertex { position: [-0.32668945, -0.10976562 * -1.0, 0.0] },
-    // PointVertex { position: [-0.31019531, 0.13096354 * -1.0, 0.0] },
-
-    // PointVertex { position: [-0.31019531, 0.13096354 * -1.0, 0.0] },
-    // PointVertex { position: [-0.29773437, 0.34843750 * -1.0, 0.0] },
-
-    // PointVertex { position: [-0.29773437, 0.34843750 * -1.0, 0.0] },
-    // PointVertex { position: [-0.36664063, 0.44531250 * -1.0, 0.0] },
-
-    // PointVertex { position: [-0.36664063, 0.44531250 * -1.0, 0.0] },
-    // PointVertex { position: [-0.42140625, 0.40320313 * -1.0, 0.0] },
-
-    // PointVertex { position: [-0.42140625, 0.40320313 * -1.0, 0.0] },
-    // PointVertex { position: [-0.41736328, 0.24743490 * -1.0, 0.0] },
-
-    // PointVertex { position: [-0.41736328, 0.24743490 * -1.0, 0.0] },
-    // PointVertex { position: [-0.37346680, 0.15343750 * -1.0, 0.0] },
-
-    // PointVertex { position: [-0.37346680, 0.15343750 * -1.0, 0.0] },
-    // PointVertex { position: [-0.27108398, 0.15343750 * -1.0, 0.0] },
-
-    // PointVertex { position: [-0.27108398, 0.15343750 * -1.0, 0.0] },
-    // PointVertex { position: [-0.16586914, 0.11730469 * -1.0, 0.0] },
-
-    // PointVertex { position: [-0.16586914, 0.11730469 * -1.0, 0.0] },
-    // PointVertex { position: [-0.07198242, 0.11450521 * -1.0, 0.0] },
-
-    // PointVertex { position: [-0.07198242, 0.11450521 * -1.0, 0.0] },
-    // PointVertex { position: [-0.05379883, 0.04309896 * -1.0, 0.0] },
-
-    // PointVertex { position: [-0.05379883, 0.04309896 * -1.0, 0.0] },
-    // PointVertex { position: [-0.12674805, -0.02223958 * -1.0, 0.0] },
-
-    // PointVertex { position: [-0.12674805, -0.02223958 * -1.0, 0.0] },
-    // PointVertex { position: [-0.23304687, -0.01871094 * -1.0, 0.0] },
-
-    // PointVertex { position: [-0.23304687, -0.01871094 * -1.0, 0.0] },
-    // PointVertex { position: [-0.26419922, 0.10899740 * -1.0, 0.0] },
-
-    // PointVertex { position: [-0.26419922, 0.10899740 * -1.0, 0.0] },
-    // PointVertex { position: [-0.23636719, 0.22424479 * -1.0, 0.0] },
-
-    // PointVertex { position: [-0.23636719, 0.22424479 * -1.0, 0.0] },
-    // PointVertex { position: [-0.19717773, 0.30233073 * -1.0, 0.0] },
-
-    // PointVertex { position: [-0.19717773, 0.30233073 * -1.0, 0.0] },
-    // PointVertex { position: [-0.11142578, 0.33385417 * -1.0, 0.0] },
-
-    // PointVertex { position: [-0.11142578, 0.33385417 * -1.0, 0.0] },
-    // PointVertex { position: [-0.03119141, 0.33385417 * -1.0, 0.0] },
-
-    // PointVertex { position: [-0.03119141, 0.33385417 * -1.0, 0.0] },
-    // PointVertex { position: [0.01209961, 0.31968750 * -1.0, 0.0] },
-
-    // PointVertex { position: [0.01209961, 0.31968750 * -1.0, 0.0] },
-    // PointVertex { position: [0.03260742, 0.30291667 * -1.0, 0.0] },
-
-    // PointVertex { position: [0.03260742, 0.30291667 * -1.0, 0.0] },
-    // PointVertex { position: [0.09857422, 0.20313802 * -1.0, 0.0] },
-
-    // PointVertex { position: [0.09857422, 0.20313802 * -1.0, 0.0] },
-    // PointVertex { position: [0.19447266, 0.00919271 * -1.0, 0.0] },
-
-    // PointVertex { position: [0.19447266, 0.00919271 * -1.0, 0.0] },
-    // PointVertex { position: [0.22881836, -0.14255208 * -1.0, 0.0] },
-
-    // PointVertex { position: [0.22881836, -0.14255208 * -1.0, 0.0] },
-    // PointVertex { position: [0.22881836, 0.08143229 * -1.0, 0.0] },
-
-    // PointVertex { position: [0.22881836, 0.08143229 * -1.0, 0.0] },
-    // PointVertex { position: [0.22881836, 0.13290365 * -1.0, 0.0] },
-
-    // PointVertex { position: [0.22881836, 0.13290365 * -1.0, 0.0] },
-    // PointVertex { position: [0.27603516, 0.19622396 * -1.0, 0.0] },
-
-    // PointVertex { position: [0.27603516, 0.19622396 * -1.0, 0.0] },
-    // PointVertex { position: [0.32259766, 0.19622396 * -1.0, 0.0] },
-
-    // PointVertex { position: [0.32259766, 0.19622396 * -1.0, 0.0] },
-    // PointVertex { position: [0.39010742, 0.15372396 * -1.0, 0.0] },
-
-    // PointVertex { position: [0.39010742, 0.15372396 * -1.0, 0.0] },
-    // PointVertex { position: [0.48239258, 0.01796875 * -1.0, 0.0] },
-
-    // PointVertex { position: [0.48239258, 0.01796875 * -1.0, 0.0] },
-    // PointVertex { position: [0.48435547, -0.09550781 * -1.0, 0.0] },
-
-    // PointVertex { position: [0.48435547, -0.09550781 * -1.0, 0.0] },
-    // PointVertex { position: [0.48627930, -0.15149740 * -1.0, 0.0] },
-
-    // PointVertex { position: [0.48627930, -0.15149740 * -1.0, 0.0] },
-    // PointVertex { position: [0.50114258, 0.12231771 * -1.0, 0.0] },
-
-    // PointVertex { position: [0.50114258, 0.12231771 * -1.0, 0.0] },
-    // PointVertex { position: [0.49539062, 0.29201823 * -1.0, 0.0] },
-
-    // PointVertex { position: [0.49539062, 0.29201823 * -1.0, 0.0] },
-    // PointVertex { position: [0.44889648, 0.39617188 * -1.0, 0.0] },
-
-    // PointVertex { position: [0.44889648, 0.39617188 * -1.0, 0.0] },
-    // PointVertex { position: [0.30957031, 0.42516927 * -1.0, 0.0] },
-
-    // PointVertex { position: [0.30957031, 0.42516927 * -1.0, 0.0] },
-    // PointVertex { position: [0.16799805, 0.46500000 * -1.0, 0.0] },
-
-    // PointVertex { position: [0.16799805, 0.46500000 * -1.0, 0.0] },
-    // PointVertex { position: [0.01589844, 0.47347656 * -1.0, 0.0] },
-
-    // PointVertex { position: [0.01589844, 0.47347656 * -1.0, 0.0] },
-    // PointVertex { position: [-0.26048828, 0.43906250 * -1.0, 0.0] },
-
-    // PointVertex { position: [-0.26048828, 0.43906250 * -1.0, 0.0] },
-    // PointVertex { position: [-0.37705078, 0.45567708 * -1.0, 0.0] },
-// ];
-
-struct LinePass {
-    line_vertices: Vec<PointVertex>,
-    line_vertex_buffer: wgpu::Buffer,
-    line_render_pipeline: wgpu::RenderPipeline,
-}
-
-impl LinePass {
-    fn new(
-        device: &wgpu::Device,
-        config: &wgpu::SurfaceConfiguration,
-        camera_bind_group_layout: &wgpu::BindGroupLayout
-    ) -> Self {
-        let mut line_vertices: Vec<PointVertex> = Vec::new();
-        line_vertices.insert(line_vertices.len(), PointVertex { position: [0.01589844, 0.47347656 * -1.0, 0.0] });
-        line_vertices.insert(line_vertices.len(), PointVertex { position: [0.01589844, 0.47347656 * -1.0, 0.0] });
-
-        line_vertices.insert(line_vertices.len(), PointVertex { position: [0.48239258, 0.01796875 * -1.0, 0.0] });
-        line_vertices.insert(line_vertices.len(), PointVertex { position: [0.48435547, -0.09550781 * -1.0, 0.0] });
-
-        line_vertices.insert(line_vertices.len(), PointVertex { position: [0.48435547, -0.09550781 * -1.0, 0.0] });
-        line_vertices.insert(line_vertices.len(), PointVertex { position: [0.48627930, -0.15149740 * -1.0, 0.0] });
-
-        line_vertices.insert(line_vertices.len(), PointVertex { position: [0.48627930, -0.15149740 * -1.0, 0.0] });
-        line_vertices.insert(line_vertices.len(), PointVertex { position: [0.50114258, 0.12231771 * -1.0, 0.0] });
-
-        line_vertices.insert(line_vertices.len(), PointVertex { position: [0.50114258, 0.12231771 * -1.0, 0.0] });
-        line_vertices.insert(line_vertices.len(), PointVertex { position: [0.49539062, 0.29201823 * -1.0, 0.0] });
-
-        line_vertices.insert(line_vertices.len(), PointVertex { position: [0.49539062, 0.29201823 * -1.0, 0.0] });
-        line_vertices.insert(line_vertices.len(), PointVertex { position: [0.44889648, 0.39617188 * -1.0, 0.0] });
-
-        line_vertices.insert(line_vertices.len(), PointVertex { position: [0.44889648, 0.39617188 * -1.0, 0.0] });
-        line_vertices.insert(line_vertices.len(), PointVertex { position: [0.30957031, 0.42516927 * -1.0, 0.0] });
-
-        let line_vertex_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-            label: Some("Line Pass VB"),
-            contents: bytemuck::cast_slice(&line_vertices),
-            usage: wgpu::BufferUsages::VERTEX,
-        });
-
-        let line_shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
-            label: Some("Shader for lines"),
-            source: wgpu::ShaderSource::Wgsl(include_str!("shader_line.wgsl").into()),
-        });
-
-        let line_render_pipeline_layout =
-            device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
-                label: Some("Render Pipeline Line Layout"),
-                bind_group_layouts: &[
-                    &camera_bind_group_layout,
-                ],
-                push_constant_ranges: &[],
-            });
-
-        let line_render_pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
-            label: Some("Render Pipeline"),
-            layout: Some(&line_render_pipeline_layout),
-            vertex: wgpu::VertexState {
-                module: &line_shader,
-                entry_point: "vs_main",
-                buffers: &[model::PointVertex::desc()],
-            },
-            fragment: Some(wgpu::FragmentState {
-                module: &line_shader,
-                entry_point: "fs_main",
-                targets: &[Some(wgpu::ColorTargetState {
-                    format: config.format,
-                    blend: Some(wgpu::BlendState::REPLACE),
-                    write_mask: wgpu::ColorWrites::ALL,
-                })],
-            }),
-            primitive: wgpu::PrimitiveState {
-                topology: wgpu::PrimitiveTopology::LineList,
-                strip_index_format: None,
-                ..Default::default()
-            },
-            depth_stencil: None, 
-            multisample: wgpu::MultisampleState::default(),
-            multiview: None,
-        });
-
-        LinePass {
-            line_vertices,
-            line_vertex_buffer,
-            line_render_pipeline,
-        }
-    }
-
-
-    fn render(&self, view: &wgpu::TextureView, encoder: &mut wgpu::CommandEncoder, camera_bind_group: &wgpu::BindGroup) {
-        let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
-            label: Some("Depth Visual Render Pass"),
-            color_attachments: &[Some(wgpu::RenderPassColorAttachment {
-                view: &view,
-                resolve_target: None,
-                ops: wgpu::Operations {
-                    load: wgpu::LoadOp::Load,
-                    store: true,
-                },
-            })],
-            depth_stencil_attachment: None,
-        });
-        render_pass.set_pipeline(&self.line_render_pipeline);
-        render_pass.set_bind_group(0, camera_bind_group, &[]);
-        render_pass.set_vertex_buffer(0, self.line_vertex_buffer.slice(..));
-        render_pass.draw(0..self.line_vertices.len() as u32, 0..1);
-    }
-
-    fn set_lines(&mut self, 
-        device: &wgpu::Device,
-        pts: Vec<PointVertex>) {
-        self.line_vertices = pts;
-        self.line_vertex_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-            label: Some("Line Pass VB"),
-            contents: bytemuck::cast_slice(&self.line_vertices),
-            usage: wgpu::BufferUsages::VERTEX,
-        });
-    }
-}
+mod lines;
 
 struct State {
     window: Window,
@@ -419,7 +173,7 @@ struct State {
     depth_texture: texture::Texture,
     obj_model: model::Model,
     mops: Vec<Mop>,
-    line_pass: LinePass,
+    line_pass: lines::LinePass,
 }
 
 const INDICES: &[u16] = &[0, 1, 4, 1, 2, 4, 2, 3, 4];
@@ -483,7 +237,7 @@ impl GuyController {
             _ => false,
         }
     }
-    
+
     fn update_guy(&self, ins: &mut Instance) {
         const ROTATION_SPEED: f32 = 0.4 * std::f32::consts::PI / 60.0;
 
@@ -496,7 +250,6 @@ impl GuyController {
         } else {
             ins.speed = 0.0;
         }
-
 
         if self.is_right_pressed {
             // Rescale the distance between the target and eye so
@@ -511,7 +264,6 @@ impl GuyController {
         }
     }
 }
-
 
 impl CameraController {
     fn new(speed: f32) -> Self {
@@ -771,34 +523,8 @@ impl State {
         let camera_controller = CameraController::new(0.2);
         let guy_controller = GuyController::new();
 
-        // const SPACE_BETWEEN: f32 = 3.0;
-        // let instances = (0..NUM_INSTANCES_PER_ROW)
-        //     .flat_map(|z| {
-        //         (0..NUM_INSTANCES_PER_ROW).map(move |x| {
-        //             let x = SPACE_BETWEEN * (x as f32 - NUM_INSTANCES_PER_ROW as f32 / 2.0);
-        //             let z = SPACE_BETWEEN * (z as f32 - NUM_INSTANCES_PER_ROW as f32 / 2.0);
-
-        //             let position = cgmath::Vector3 { x, y: 0.0, z };
-
-        //             let rotation = if position.is_zero() {
-        //                 cgmath::Quaternion::from_axis_angle( cgmath::Vector3::unit_z(), cgmath::Deg(0.0),)
-        //             } else {
-        //                 cgmath::Quaternion::from_axis_angle(
-        //                     cgmath::Vector3::unit_y(),
-        //                     cgmath::Deg(20.0),
-        //                 )
-        //             };
-
-        //             Instance {
-        //                 position,
-        //                 rotation,
-        //                 speed: x * -0.00002,
-        //             }
-        //         })
-        //     })
-        //     .collect::<Vec<_>>();
         let instances: Vec<Instance> = Vec::new();
-        let mops: Vec<Mop> = (0..NUM_MOPS).map(|_| {Mop::new(None, None)}).collect();
+        let mops: Vec<Mop> = (0..NUM_MOPS).map(|_| Mop::new(None, None)).collect();
 
         let instance_data = mops.iter().map(from_mop_to_raw).collect::<Vec<_>>();
         let instance_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
@@ -817,7 +543,6 @@ impl State {
             source: wgpu::ShaderSource::Wgsl(include_str!("shader.wgsl").into()),
         });
 
-
         let render_pipeline_layout =
             device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
                 label: Some("Render Pipeline Layout"),
@@ -828,7 +553,6 @@ impl State {
                 ],
                 push_constant_ranges: &[],
             });
-
 
         let render_pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
             label: Some("Render Pipeline"),
@@ -871,8 +595,6 @@ impl State {
             multiview: None,
         });
 
-
-
         let index_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: Some("Index Buffer"),
             contents: bytemuck::cast_slice(INDICES),
@@ -885,8 +607,8 @@ impl State {
             resources::load_model("egg.obj", &device, &queue, &texture_bind_group_layout)
                 .await
                 .unwrap();
-        
-        let line_pass = LinePass::new(&device, &config, &camera_bind_group_layout);
+
+        let line_pass = lines::LinePass::new(&device, &config, &camera_bind_group_layout);
 
         Self {
             window,
@@ -972,18 +694,19 @@ impl State {
                 self.space_pressed = *state == ElementState::Pressed;
                 true
             }
-            _ => { self.camera_controller.process_events(event) || self.guy_controller.process_events(event) }
+            _ => {
+                self.camera_controller.process_events(event)
+                    || self.guy_controller.process_events(event)
+            }
         }
     }
 
     fn update(&mut self) {
-        // let time = self.start.elapsed().as_secs_f32();
         self.start = self.start + 0.008;
         let time = self.start;
         self.queue
             .write_buffer(&self.time_buffer, 0, bytemuck::bytes_of(&time));
         self.camera_controller.update_camera(&mut self.camera);
-        // self.guy_controller.update_guy(&mut self.instances[0]);
         self.camera_uniform.update_view_proj(&self.camera);
         self.queue.write_buffer(
             &self.camera_buffer,
@@ -993,23 +716,24 @@ impl State {
 
         for instance in &mut self.instances {
             instance.position = instance.position
-                + instance.rotation * cgmath::Vector3 {x: instance.speed, y: 0.0, z: 0.0};
+                + instance.rotation
+                    * cgmath::Vector3 {
+                        x: instance.speed,
+                        y: 0.0,
+                        z: 0.0,
+                    };
         }
 
         for mop in &mut self.mops {
             mop.tick();
         }
-        let instance_data = self
-            .mops
-            .iter()
-            .map(from_mop_to_raw)
-            .collect::<Vec<_>>();
+        let instance_data = self.mops.iter().map(from_mop_to_raw).collect::<Vec<_>>();
         self.queue.write_buffer(
             &self.instance_buffer,
             0,
             bytemuck::cast_slice(&instance_data),
         );
-        let pts = mops_to_pts(&self.mops);
+        let pts = util::mops_to_pts(&self.mops);
         self.line_pass.set_lines(&self.device, pts)
     }
 
@@ -1066,7 +790,8 @@ impl State {
                 &self.camera_bind_group,
             );
         }
-        self.line_pass.render(&view, &mut encoder, &self.camera_bind_group);
+        self.line_pass
+            .render(&view, &mut encoder, &self.camera_bind_group);
 
         self.queue.submit(std::iter::once(encoder.finish()));
         output.present();
@@ -1156,14 +881,23 @@ pub async fn run() {
     });
 }
 
+mod util {
+    use crate::point::Pt;
+    use super::Mop;
 
-fn mops_to_pts(mops: &Vec<Mop>) -> Vec<PointVertex> {
-    let mut line_vertices: Vec<PointVertex> = Vec::new();
-    for mop in mops {
-        let first_mop = mops.get(0).unwrap();
-        line_vertices.insert(line_vertices.len(), PointVertex { position: [first_mop.loc.x, first_mop.height+2.0, first_mop.loc.y] });
-        line_vertices.insert(line_vertices.len(), PointVertex { position: [mop.loc.x, mop.height+2.0, mop.loc.y] })
+    pub fn mops_to_pts(mops: &Vec<Mop>) -> Vec<Pt> {
+        let mut line_vertices: Vec<Pt> = Vec::new();
+        for mop in mops {
+            let first_mop = mops.get(0).unwrap();
+            line_vertices.insert(
+                line_vertices.len(),
+                Pt (first_mop.loc.x, first_mop.height + 2.0, first_mop.loc.y),
+            );
+            line_vertices.insert(
+                line_vertices.len(),
+                Pt (mop.loc.x, mop.height + 2.0, mop.loc.y),
+            )
+        }
+        line_vertices
     }
-    line_vertices
 }
-
