@@ -1,4 +1,4 @@
-use std::ops::Sub;
+use std::ops::{Sub, Add};
 
 #[derive()]
 #[repr(C)]
@@ -9,9 +9,23 @@ impl Pt {
     pub fn mag(&self) -> f32 {
         (self.0.powi(2) + self.1.powi(2) + self.2.powi(2)).sqrt()
     }
+    pub fn from_vec2(v2: cgmath::Vector2<f32>) -> Self {
+        Pt::from_vec2_h(v2, 0.0)
+    }
+
+    pub fn from_vec2_h(v2: cgmath::Vector2<f32>, h: f32) -> Self {
+        Pt(v2.x, h, v2.y)
+    }
 }
 
 impl Eq for Pt {}
+
+impl Add for Pt {
+    type Output = Pt;
+    fn add(self, other: Pt) -> Self {
+        Pt ( self.0 + other.0, self.1 + other.1, self.2 + other.2, )
+    }
+}
 
 impl Sub for Pt {
     type Output = Pt;
@@ -50,7 +64,14 @@ mod tests {
     fn sub_2() {
         let p_a = P_A;
         let p_b = P_B;
-        assert_eq!((p_b-p_a), Pt (1.0, 1.0, 1.0));
+        assert_eq!((p_b-p_a), Pt (1.0, 1.0, 0.0));
+    }
+
+    #[test]
+    fn add() {
+        let p_a = P_A;
+        let p_b = P_B;
+        assert_eq!((p_b+p_a), Pt (3.0, 3.0, 0.0));
     }
 
     #[test]

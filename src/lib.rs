@@ -81,9 +81,9 @@ impl InstanceRaw {
 fn from_mop_to_raw(mop: &Mop) -> InstanceRaw {
     InstanceRaw {
         model: (cgmath::Matrix4::from_translation(cgmath::Vector3 {
-            x: mop.loc.x,
-            y: mop.height,
-            z: mop.loc.y,
+            x: mop.loc.0,
+            y: mop.loc.1,
+            z: mop.loc.2,
         }) * cgmath::Matrix4::from(cgmath::Quaternion::from_axis_angle(
             cgmath::Vector3::unit_y(),
             cgmath::Deg(mop.dir),
@@ -891,11 +891,11 @@ mod util {
             let first_mop = mops.get(0).unwrap();
             line_vertices.insert(
                 line_vertices.len(),
-                Pt (first_mop.loc.x, first_mop.height + 2.0, first_mop.loc.y),
+                Pt (first_mop.loc.0, first_mop.loc.1 + 2.0, first_mop.loc.2),
             );
             line_vertices.insert(
                 line_vertices.len(),
-                Pt (mop.loc.x, mop.height + 2.0, mop.loc.y),
+                Pt (mop.loc.0, mop.loc.1 + 2.0, mop.loc.2),
             )
         }
         line_vertices
