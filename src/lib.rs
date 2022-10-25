@@ -1,5 +1,6 @@
 use cgmath::prelude::*;
 use mop::Mop;
+use point::Pt;
 use wgpu::util::DeviceExt;
 use winit::{
     event::*,
@@ -79,14 +80,18 @@ impl InstanceRaw {
 }
 
 fn from_mop_to_raw(mop: &Mop) -> InstanceRaw {
+    create_raw(mop.loc, mop.dir)
+}
+
+fn create_raw(loc: Pt, dir: f32) -> InstanceRaw {
     InstanceRaw {
         model: (cgmath::Matrix4::from_translation(cgmath::Vector3 {
-            x: mop.loc.0,
-            y: mop.loc.1,
-            z: mop.loc.2,
+            x: loc.0,
+            y: loc.1,
+            z: loc.2,
         }) * cgmath::Matrix4::from(cgmath::Quaternion::from_axis_angle(
             cgmath::Vector3::unit_y(),
-            cgmath::Deg(mop.dir),
+            cgmath::Deg(dir),
         )))
         .into(),
     }
@@ -153,6 +158,7 @@ struct State {
     mouse_x: f64,
     mouse_y: f64,
     diffuse_bind_group: wgpu::BindGroup,
+    food_texture_bind_group: wgpu::BindGroup,
     #[warn(dead_code)]
     diffuse_texture: texture::Texture,
     other_bind_group: wgpu::BindGroup,
@@ -171,7 +177,8 @@ struct State {
     instances: Vec<Instance>,
     instance_buffer: wgpu::Buffer,
     depth_texture: texture::Texture,
-    obj_model: model::Model,
+    egg_model: model::Model,
+    food_model: model::Model,
     mops: Vec<Mop>,
     line_pass: lines::LinePass,
 }
@@ -184,12 +191,16 @@ struct CameraController {
     is_backward_pressed: bool,
     is_left_pressed: bool,
     is_right_pressed: bool,
+    is_up_pressed: bool,
+    is_down_pressed: bool,
 }
 struct GuyController {
     is_forward_pressed: bool,
     is_backward_pressed: bool,
     is_left_pressed: bool,
     is_right_pressed: bool,
+    is_up_pressed: bool,
+    is_down_pressed: bool,
 }
 
 impl GuyController {
@@ -199,6 +210,8 @@ impl GuyController {
             is_backward_pressed: false,
             is_left_pressed: false,
             is_right_pressed: false,
+            is_up_pressed: false,
+            is_down_pressed: false,
         }
     }
 
@@ -229,6 +242,14 @@ impl GuyController {
                     }
                     VirtualKeyCode::L => {
                         self.is_right_pressed = is_pressed;
+                        true
+                    }
+                    VirtualKeyCode::P => {
+                        self.is_up_pressed = is_pressed;
+                        true
+                    }
+                    VirtualKeyCode::Semicolon => {
+                        self.is_down_pressed = is_pressed;
                         true
                     }
                     _ => false,
@@ -273,6 +294,8 @@ impl CameraController {
             is_backward_pressed: false,
             is_left_pressed: false,
             is_right_pressed: false,
+            is_up_pressed: false,
+            is_down_pressed: false,
         }
     }
 
@@ -303,6 +326,16 @@ impl CameraController {
                     }
                     VirtualKeyCode::D | VirtualKeyCode::Right => {
                         self.is_right_pressed = is_pressed;
+                        true
+                    }
+
+                    VirtualKeyCode::R => {
+                        self.is_up_pressed = is_pressed;
+                        true
+                    }
+
+                    VirtualKeyCode::F => {
+                        self.is_down_pressed = is_pressed;
                         true
                     }
                     _ => false,
@@ -340,6 +373,14 @@ impl CameraController {
         }
         if self.is_left_pressed {
             camera.eye = camera.target - (forward - right * self.speed).normalize() * forward_mag;
+        }
+
+        if self.is_up_pressed {
+            camera.eye = camera.eye + camera.up * 0.1;
+        }
+
+        if self.is_down_pressed {
+            camera.eye = camera.eye - camera.up * 0.1;
         }
     }
 }
@@ -391,6 +432,10 @@ impl State {
         let other_texture =
             texture::Texture::from_bytes(&device, &queue, other_bytes, "sidey-tree.png").unwrap();
 
+        let food_tex_bytes = include_bytes!("red.png");
+        let food_texture =
+            texture::Texture::from_bytes(&device, &queue, other_bytes, "red.png").unwrap();
+
         let texture_bind_group_layout =
             device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
                 entries: &[
@@ -426,6 +471,21 @@ impl State {
                 wgpu::BindGroupEntry {
                     binding: 1,
                     resource: wgpu::BindingResource::Sampler(&diffuse_texture.sampler),
+                },
+            ],
+            label: Some("diffuse_bind_group"),
+        });
+
+        let food_texture_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
+            layout: &texture_bind_group_layout,
+            entries: &[
+                wgpu::BindGroupEntry {
+                    binding: 0,
+                    resource: wgpu::BindingResource::TextureView(&food_texture.view),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 1,
+                    resource: wgpu::BindingResource::Sampler(&food_texture.sampler),
                 },
             ],
             label: Some("diffuse_bind_group"),
@@ -603,8 +663,13 @@ impl State {
 
         let num_indices = INDICES.len() as u32;
 
-        let obj_model =
+        let egg_model =
             resources::load_model("egg.obj", &device, &queue, &texture_bind_group_layout)
+                .await
+                .unwrap();
+
+        let food_model =
+            resources::load_model("food.obj", &device, &queue, &texture_bind_group_layout)
                 .await
                 .unwrap();
 
@@ -624,6 +689,7 @@ impl State {
             mouse_x: 0.0,
             mouse_y: 0.0,
             diffuse_bind_group,
+            food_texture_bind_group,
             diffuse_texture,
             other_bind_group,
             space_pressed: false,
@@ -641,7 +707,8 @@ impl State {
             mops,
             instance_buffer,
             depth_texture,
-            obj_model,
+            egg_model,
+            food_model,
             line_pass,
         }
     }
@@ -781,11 +848,18 @@ impl State {
                 },
                 &[],
             );
+            render_pass.set_bind_group( 3, &self.food_texture_bind_group , &[],);
             render_pass.set_bind_group(2, &self.camera_bind_group, &[]);
 
             use model::DrawModel;
             render_pass.draw_model_instanced(
-                &self.obj_model,
+                &self.egg_model,
+                0..self.mops.len() as u32,
+                &self.camera_bind_group,
+            );
+
+            render_pass.draw_model_instanced(
+                &self.food_model,
                 0..self.mops.len() as u32,
                 &self.camera_bind_group,
             );
@@ -891,13 +965,17 @@ mod util {
             let first_mop = mops.get(0).unwrap();
             line_vertices.insert(
                 line_vertices.len(),
-                Pt (first_mop.loc.0, first_mop.loc.1 + 2.0, first_mop.loc.2),
+                Pt (first_mop.loc.0, first_mop.loc.1 + 0.0, first_mop.loc.2),
             );
             line_vertices.insert(
                 line_vertices.len(),
-                Pt (mop.loc.0, mop.loc.1 + 2.0, mop.loc.2),
+                Pt (mop.loc.0, mop.loc.1 + 0.0, mop.loc.2),
             )
         }
         line_vertices
     }
+}
+
+pub trait Ent {
+    fn tick(&mut self);
 }

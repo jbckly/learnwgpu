@@ -2,9 +2,9 @@ use std::ops::Add;
 
 use cgmath::{Basis2, Rotation};
 use rand::Rng;
-use crate::point::Pt;
+use crate::{point::Pt, Ent};
 
-const MOVE_STEP: f32 = 0.02;
+const MOVE_STEP: f32 = 0.002;
 const ROTATE_STEP: f32 = 0.2;
 const HUNGER_STEP: f32 = 0.0001;
 
@@ -36,8 +36,9 @@ impl Mop {
             age: (seed * -1000.0) as i32,
         }
     }
-
-    pub fn tick(&mut self) {
+}
+impl Ent for Mop {
+    fn tick(&mut self) {
         self.age += 1;
         self.hunger += HUNGER_STEP;
         let rot: Basis2<f32> = cgmath::Rotation2::from_angle(cgmath::Deg(self.dir));
@@ -45,7 +46,7 @@ impl Mop {
         if self.age > 0 {
             self.loc = self.loc
                 + Pt::from_vec2_h(rot.rotate_vector(cgmath::Vector2::unit_x() * MOVE_STEP),
-                (self.age as f32 / 10.0).sin() * 0.1);
+                (self.age as f32 / 60.0).sin() * 0.005);
         };
     }
 }
