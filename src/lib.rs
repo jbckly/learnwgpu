@@ -1,4 +1,5 @@
 use cgmath::prelude::*;
+use food::Food;
 use mop::Mop;
 use point::Pt;
 use wgpu::util::DeviceExt;
@@ -13,6 +14,7 @@ mod mop;
 mod resources;
 mod texture;
 mod point;
+mod food;
 
 // use std::time::{Duration, Instant};
 
@@ -30,6 +32,7 @@ struct Instance {
 }
 
 const NUM_MOPS: u32 = 10;
+const NUM_FOOD: u32 = 1000;
 
 #[repr(C)]
 #[derive(Copy, Clone, bytemuck::Pod, bytemuck::Zeroable)]
@@ -81,6 +84,10 @@ impl InstanceRaw {
 
 fn from_mop_to_raw(mop: &Mop) -> InstanceRaw {
     create_raw(mop.loc, mop.dir)
+}
+
+fn from_food_to_raw(food: &Food) -> InstanceRaw {
+    create_raw(food.loc, food.dir)
 }
 
 fn create_raw(loc: Pt, dir: f32) -> InstanceRaw {
@@ -176,10 +183,12 @@ struct State {
     guy_controller: GuyController,
     instances: Vec<Instance>,
     instance_buffer: wgpu::Buffer,
+    food_instance_buffer: wgpu::Buffer,
     depth_texture: texture::Texture,
     egg_model: model::Model,
     food_model: model::Model,
     mops: Vec<Mop>,
+    foods: Vec<Food>,
     line_pass: lines::LinePass,
 }
 
@@ -434,7 +443,7 @@ impl State {
 
         let food_tex_bytes = include_bytes!("red.png");
         let food_texture =
-            texture::Texture::from_bytes(&device, &queue, other_bytes, "red.png").unwrap();
+            texture::Texture::from_bytes(&device, &queue, food_tex_bytes, "red.png").unwrap();
 
         let texture_bind_group_layout =
             device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
@@ -488,7 +497,7 @@ impl State {
                     resource: wgpu::BindingResource::Sampler(&food_texture.sampler),
                 },
             ],
-            label: Some("diffuse_bind_group"),
+            label: Some("food_bind_group"),
         });
 
         let other_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
@@ -585,11 +594,19 @@ impl State {
 
         let instances: Vec<Instance> = Vec::new();
         let mops: Vec<Mop> = (0..NUM_MOPS).map(|_| Mop::new(None, None)).collect();
+        let foods: Vec<Food> = (0..NUM_FOOD).map(|_| Food::new(None, None)).collect();
 
         let instance_data = mops.iter().map(from_mop_to_raw).collect::<Vec<_>>();
         let instance_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: Some("Instance buffer"),
             contents: bytemuck::cast_slice(&instance_data),
+            usage: wgpu::BufferUsages::VERTEX | wgpu::BufferUsages::COPY_DST,
+        });
+
+        let food_instance_data = foods.iter().map(from_food_to_raw).collect::<Vec<_>>();
+        let food_instance_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+            label: Some("Food instance buffer"),
+            contents: bytemuck::cast_slice(&food_instance_data),
             usage: wgpu::BufferUsages::VERTEX | wgpu::BufferUsages::COPY_DST,
         });
 
@@ -705,7 +722,9 @@ impl State {
             guy_controller,
             instances,
             mops,
+            foods,
             instance_buffer,
+            food_instance_buffer,
             depth_texture,
             egg_model,
             food_model,
@@ -836,6 +855,7 @@ impl State {
                 }),
             });
             render_pass.set_bind_group(1, &self.time_bind_group, &[]);
+            render_pass.set_bind_group(2, &self.camera_bind_group, &[]);
 
             render_pass.set_vertex_buffer(1, self.instance_buffer.slice(..));
             render_pass.set_pipeline(&self.render_pipeline);
@@ -848,8 +868,6 @@ impl State {
                 },
                 &[],
             );
-            render_pass.set_bind_group( 3, &self.food_texture_bind_group , &[],);
-            render_pass.set_bind_group(2, &self.camera_bind_group, &[]);
 
             use model::DrawModel;
             render_pass.draw_model_instanced(
@@ -858,9 +876,12 @@ impl State {
                 &self.camera_bind_group,
             );
 
+            // food
+            render_pass.set_bind_group( 0, &self.food_texture_bind_group , &[],);
+            render_pass.set_vertex_buffer(1, self.food_instance_buffer.slice(..));
             render_pass.draw_model_instanced(
                 &self.food_model,
-                0..self.mops.len() as u32,
+                0..self.foods.len() as u32,
                 &self.camera_bind_group,
             );
         }
