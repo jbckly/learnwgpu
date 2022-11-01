@@ -3,7 +3,7 @@ use wgpu::util::DeviceExt;
 use crate::point::Pt;
 
 
-trait AddLine {
+pub trait AddLine {
     fn addl(&mut self, line: (Pt, Pt));
 }
 

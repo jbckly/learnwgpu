@@ -4,8 +4,8 @@ use cgmath::{Basis2, Rotation};
 use rand::Rng;
 use crate::{point::Pt, Ent};
 
-const MOVE_STEP: f32 = 0.002;
-const ROTATE_STEP: f32 = 0.02;
+const MOVE_STEP: f32 = 0.02;
+const ROTATE_STEP: f32 = 0.2;
 const HUNGER_STEP: f32 = 0.0001;
 
 

@@ -32,7 +32,7 @@ struct Instance {
 }
 
 const NUM_MOPS: u32 = 10;
-const NUM_FOOD: u32 = 1000;
+const NUM_FOOD: u32 = 10000;
 
 #[repr(C)]
 #[derive(Copy, Clone, bytemuck::Pod, bytemuck::Zeroable)]
@@ -813,13 +813,23 @@ impl State {
         for mop in &mut self.mops {
             mop.tick();
         }
+        for f in &mut self.foods {
+            f.tick();
+        }
         let instance_data = self.mops.iter().map(from_mop_to_raw).collect::<Vec<_>>();
+        let food_instance_data = self.foods.iter().map(from_food_to_raw).collect::<Vec<_>>();
         self.queue.write_buffer(
             &self.instance_buffer,
             0,
             bytemuck::cast_slice(&instance_data),
         );
-        let pts = util::mops_to_pts(&self.mops);
+
+        self.queue.write_buffer(
+            &self.food_instance_buffer,
+            0,
+            bytemuck::cast_slice(&food_instance_data),
+        );
+        let pts = util::mops_to_pts(&self.mops, &self.foods);
         self.line_pass.set_lines(&self.device, pts)
     }
 
@@ -977,23 +987,37 @@ pub async fn run() {
 }
 
 mod util {
+    use std::f32::INFINITY;
+
+    use crate::food;
     use crate::point::Pt;
     use super::Mop;
+    use super::Food;
+    use super::lines::AddLine;
 
-    pub fn mops_to_pts(mops: &Vec<Mop>) -> Vec<Pt> {
+    pub fn mops_to_pts(mops: &Vec<Mop>, foods: &Vec<Food>) -> Vec<Pt> {
         let mut line_vertices: Vec<Pt> = Vec::new();
         for mop in mops {
-            let first_mop = mops.get(0).unwrap();
-            line_vertices.insert(
-                line_vertices.len(),
-                Pt (first_mop.loc.0, first_mop.loc.1 + 0.0, first_mop.loc.2),
-            );
-            line_vertices.insert(
-                line_vertices.len(),
-                Pt (mop.loc.0, mop.loc.1 + 0.0, mop.loc.2),
-            )
+            let (fo, _) = closest_food(foods, mop.loc);
+            if let Some(f) = fo {
+                line_vertices.addl((f.loc, mop.loc));
+            }
         }
         line_vertices
+    }
+
+    pub fn closest_food(foods: &Vec<Food>, pt: Pt) -> (Option<&Food>, f32) {
+        let mut mag_of_closest = INFINITY;
+        let mut closest_pt: Option<&Food> = None;
+
+        for f in foods {
+            let mag = (f.loc - pt).mag();
+            if mag < mag_of_closest {
+                mag_of_closest = mag;
+                closest_pt = Some(f);
+            }
+        };
+        (closest_pt, mag_of_closest)
     }
 }
 
