@@ -32,7 +32,7 @@ struct Instance {
 }
 
 const NUM_MOPS: u32 = 10;
-const NUM_FOOD: u32 = 10000;
+const NUM_FOOD: u32 = 50;
 
 #[repr(C)]
 #[derive(Copy, Clone, bytemuck::Pod, bytemuck::Zeroable)]
@@ -593,8 +593,8 @@ impl State {
         let guy_controller = GuyController::new();
 
         let instances: Vec<Instance> = Vec::new();
-        let mops: Vec<Mop> = (0..NUM_MOPS).map(|_| Mop::new(None, None)).collect();
         let foods: Vec<Food> = (0..NUM_FOOD).map(|_| Food::new(None, None)).collect();
+        let mops: Vec<Mop> = (0..NUM_MOPS).map(|_| Mop::new(None, None).set_obj(foods[0].loc)).collect();
 
         let instance_data = mops.iter().map(from_mop_to_raw).collect::<Vec<_>>();
         let instance_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
@@ -829,7 +829,7 @@ impl State {
             0,
             bytemuck::cast_slice(&food_instance_data),
         );
-        let pts = util::mops_to_pts(&self.mops, &self.foods);
+        let pts = util::mops_to_objs(&self.mops);
         self.line_pass.set_lines(&self.device, pts)
     }
 
@@ -995,7 +995,17 @@ mod util {
     use super::Food;
     use super::lines::AddLine;
 
-    pub fn mops_to_pts(mops: &Vec<Mop>, foods: &Vec<Food>) -> Vec<Pt> {
+    pub fn mops_to_objs(mops: &Vec<Mop>) -> Vec<Pt> {
+        let mut line_vertices: Vec<Pt> = Vec::new();
+        for mop in mops {
+            if let Some(p) = mop.obj() {
+                line_vertices.addl((p, mop.loc));
+            }
+        }
+        line_vertices
+    }
+
+    pub fn mops_to_closests(mops: &Vec<Mop>, foods: &Vec<Food>) -> Vec<Pt> {
         let mut line_vertices: Vec<Pt> = Vec::new();
         for mop in mops {
             let (fo, _) = closest_food(foods, mop.loc);

@@ -1,12 +1,8 @@
 use std::ops::Add;
 
-use cgmath::{Basis2, Rotation};
 use rand::Rng;
 use crate::{point::Pt, Ent};
 
-const MOVE_STEP: f32 = 0.002;
-const ROTATE_STEP: f32 = 0.2;
-const HUNGER_STEP: f32 = 0.0001;
 
 
 #[derive(Debug)]
@@ -34,7 +30,7 @@ impl Food {
             dir: if let Some(d) = dir { d } else { seed * 360.0 },
             obj: None,
             hunger: 0.2,
-            age: (seed * 3000.0 + (seceed * 3000.0)) as i32,
+            age: (threed * 3000.0 + (seceed * 3000.0)) as i32,
         }
     }
 }
